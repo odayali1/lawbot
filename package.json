@@ -15,6 +15,7 @@
     "install:client": "cd client && npm install",
     "install:all": "npm install && cd client && npm install",
     "heroku-postbuild": "npm run install:client && npm run build:client",
+    "vercel-build": "npm run install:client && npm run build:client",
     "seed": "node scripts/seedDatabase.js",
     "migrate": "node scripts/migrate.js"
   },
