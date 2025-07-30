@@ -56,7 +56,7 @@ jspm_packages/
 .env
 
 # Build directories
-client/build/
+# client/build/ - Allow for Vercel deployment
 build/
 dist/
 
