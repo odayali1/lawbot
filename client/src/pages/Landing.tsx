@@ -191,6 +191,50 @@ const Landing: React.FC = () => {
         </div>
       </section>
 
+      {/* Admin Credentials Section - Temporary for Development */}
+      <section className="py-8 bg-yellow-50 border-l-4 border-yellow-400">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white p-6 rounded-lg shadow-sm">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm mr-3">DEV</span>
+              Admin Login Credentials
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-gray-50 p-4 rounded">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email:</label>
+                <div className="flex items-center">
+                  <code className="bg-white px-3 py-2 rounded border flex-1 font-mono text-sm">admin@lawbot.com</code>
+                  <button 
+                    onClick={() => navigator.clipboard.writeText('admin@lawbot.com')}
+                    className="ml-2 px-3 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+              <div className="bg-gray-50 p-4 rounded">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password:</label>
+                <div className="flex items-center">
+                  <code className="bg-white px-3 py-2 rounded border flex-1 font-mono text-sm">LawBot2024!Admin</code>
+                  <button 
+                    onClick={() => navigator.clipboard.writeText('LawBot2024!Admin')}
+                    className="ml-2 px-3 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 mt-4">
+              💡 <strong>Alternative credentials:</strong> Email: admin@lawbot.com | Password: Admin123!
+            </p>
+            <p className="text-xs text-gray-500 mt-2">
+              ⚠️ This section is for development purposes only and should be removed in production.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Features Section */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
