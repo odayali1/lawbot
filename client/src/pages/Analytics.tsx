@@ -92,9 +92,9 @@ const Analytics: React.FC = () => {
       const avgSessionLength = totalSessions > 0 ? totalQueries / totalSessions : 0;
 
       // Generate time series data
-      const timeSeriesData = [];
-      const categoryData = [];
-      const overviewData = [];
+      const timeSeriesData: any[] = [];
+      const categoryData: any[] = [];
+      const overviewData: any[] = [];
 
       // Mock data generation based on time range
       if (timeRange === '7d') {
@@ -148,9 +148,52 @@ const Analytics: React.FC = () => {
       );
 
       setAnalyticsData({
-        overview: overviewData,
-        timeSeries: timeSeriesData,
-        categories: categoryData
+        overview: {
+          totalQueries,
+          totalSessions,
+          averageSessionLength: avgSessionLength,
+          averageResponseTime: 1.2,
+          satisfactionScore: 4.5,
+          trendsComparison: {
+            queries: 12,
+            sessions: 8,
+            satisfaction: -3
+          }
+        },
+        timeSeriesData: {
+          daily: timeRange === '7d' || timeRange === '30d' ? timeSeriesData : [],
+          weekly: timeRange === '90d' ? timeSeriesData : [],
+          monthly: []
+        },
+        categoryAnalysis: categoryData.map(item => ({
+          category: `Hour ${item.hour}`,
+          queries: item.queries,
+          averageRating: 4.2,
+          responseTime: 1.1
+        })),
+        performanceMetrics: {
+           responseTimeDistribution: [
+             { range: '0-1s', count: 45 },
+             { range: '1-2s', count: 30 },
+             { range: '2-3s', count: 15 },
+             { range: '3s+', count: 10 }
+           ],
+           satisfactionDistribution: [
+             { rating: 5, count: 40 },
+             { rating: 4, count: 35 },
+             { rating: 3, count: 15 },
+             { rating: 2, count: 7 },
+             { rating: 1, count: 3 }
+           ],
+           peakUsageHours: categoryData.slice(0, 5)
+         },
+         topQuestions: [
+           { question: 'What are my legal rights?', category: 'General Law', frequency: 45, averageRating: 4.5 },
+           { question: 'How to file a complaint?', category: 'Civil Law', frequency: 38, averageRating: 4.3 },
+           { question: 'Contract dispute resolution', category: 'Contract Law', frequency: 32, averageRating: 4.4 },
+           { question: 'Employment law basics', category: 'Employment', frequency: 28, averageRating: 4.2 },
+           { question: 'Property law questions', category: 'Property', frequency: 25, averageRating: 4.1 }
+         ]
       });
     } catch (error) {
       console.error('Error fetching analytics data:', error);
@@ -164,7 +207,7 @@ const Analytics: React.FC = () => {
   }, [timeRange, fetchAnalyticsData]);
 
   const generateDailyData = () => {
-    const data = [];
+    const data: any[] = [];
     for (let i = 29; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
@@ -178,7 +221,7 @@ const Analytics: React.FC = () => {
   };
 
   const generateWeeklyData = () => {
-    const data = [];
+    const data: any[] = [];
     for (let i = 11; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - (i * 7));
@@ -202,7 +245,7 @@ const Analytics: React.FC = () => {
   };
 
   const generateHourlyData = () => {
-    const data = [];
+    const data: any[] = [];
     for (let hour = 0; hour < 24; hour++) {
       data.push({
         hour,
