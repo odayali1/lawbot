@@ -27,4 +27,4 @@ module.exports = {
     min_uptime: '10s',
     autorestart: true
   }]
-};
+}

@@ -1,5 +1,5 @@
-const { body, param, query, validationResult } = require('express-validator');
-const winston = require('winston');
+const { body, param, query, validationResult } = require('express-validator')
+const winston = require('winston')
 
 // Configure logger
 const logger = winston.createLogger({
@@ -17,7 +17,7 @@ const logger = winston.createLogger({
       )
     })
   ]
-});
+})
 
 /**
  * Middleware to handle validation errors
@@ -26,26 +26,26 @@ const logger = winston.createLogger({
  * @param {Function} next - Express next function
  */
 const handleValidationErrors = (req, res, next) => {
-  const errors = validationResult(req);
+  const errors = validationResult(req)
   
   if (!errors.isEmpty()) {
     const errorMessages = errors.array().map(error => ({
       field: error.path || error.param,
       message: error.msg,
       value: error.value
-    }));
+    }))
 
-    logger.warn('Validation errors:', errorMessages);
+    logger.warn('Validation errors:', errorMessages)
 
     return res.status(400).json({
       success: false,
       message: 'Validation failed',
       errors: errorMessages
-    });
+    })
   }
   
-  next();
-};
+  next()
+}
 
 /**
  * User registration validation rules
@@ -72,9 +72,9 @@ const validateUserRegistration = [
   body('confirmPassword')
     .custom((value, { req }) => {
       if (value !== req.body.password) {
-        throw new Error('Password confirmation does not match password');
+        throw new Error('Password confirmation does not match password')
       }
-      return true;
+      return true
     }),
     
   body('role')
@@ -105,13 +105,13 @@ const validateUserRegistration = [
     .isBoolean()
     .custom((value) => {
       if (!value) {
-        throw new Error('You must accept the terms and conditions');
+        throw new Error('You must accept the terms and conditions')
       }
-      return true;
+      return true
     }),
     
   handleValidationErrors
-];
+]
 
 /**
  * User login validation rules
@@ -127,7 +127,7 @@ const validateUserLogin = [
     .withMessage('Password is required'),
     
   handleValidationErrors
-];
+]
 
 /**
  * Password reset request validation rules
@@ -139,7 +139,7 @@ const validatePasswordResetRequest = [
     .withMessage('Please provide a valid email address'),
     
   handleValidationErrors
-];
+]
 
 /**
  * Password reset validation rules
@@ -158,13 +158,13 @@ const validatePasswordReset = [
   body('confirmPassword')
     .custom((value, { req }) => {
       if (value !== req.body.password) {
-        throw new Error('Password confirmation does not match password');
+        throw new Error('Password confirmation does not match password')
       }
-      return true;
+      return true
     }),
     
   handleValidationErrors
-];
+]
 
 /**
  * Chat message validation rules
@@ -186,7 +186,7 @@ const validateChatMessage = [
     .withMessage('Invalid category'),
     
   handleValidationErrors
-];
+]
 
 /**
  * Chat session validation rules
@@ -204,7 +204,7 @@ const validateChatSession = [
     .withMessage('Invalid category'),
     
   handleValidationErrors
-];
+]
 
 /**
  * User profile update validation rules
@@ -234,7 +234,7 @@ const validateProfileUpdate = [
     .withMessage('Specialization must not exceed 200 characters'),
     
   handleValidationErrors
-];
+]
 
 /**
  * Password change validation rules
@@ -253,13 +253,13 @@ const validatePasswordChange = [
   body('confirmNewPassword')
     .custom((value, { req }) => {
       if (value !== req.body.newPassword) {
-        throw new Error('Password confirmation does not match new password');
+        throw new Error('Password confirmation does not match new password')
       }
-      return true;
+      return true
     }),
     
   handleValidationErrors
-];
+]
 
 /**
  * MongoDB ObjectId validation
@@ -270,7 +270,7 @@ const validateObjectId = (paramName) => [
     .withMessage(`Invalid ${paramName} format`),
     
   handleValidationErrors
-];
+]
 
 /**
  * Pagination validation rules
@@ -287,7 +287,7 @@ const validatePagination = [
     .withMessage('Limit must be between 1 and 100'),
     
   handleValidationErrors
-];
+]
 
 /**
  * Session rating validation rules
@@ -304,7 +304,7 @@ const validateSessionRating = [
     .withMessage('Feedback must not exceed 1000 characters'),
     
   handleValidationErrors
-];
+]
 
 /**
  * File upload validation
@@ -317,7 +317,7 @@ const validateFileUpload = [
     .withMessage('Description must not exceed 500 characters'),
     
   handleValidationErrors
-];
+]
 
 module.exports = {
   handleValidationErrors,
@@ -333,4 +333,4 @@ module.exports = {
   validatePagination,
   validateSessionRating,
   validateFileUpload
-};
+}

@@ -35,7 +35,7 @@ interface AppearanceSettings {
 }
 
 const Settings: React.FC = () => {
-  const { user, updateProfile } = useAuth();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('notifications');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);

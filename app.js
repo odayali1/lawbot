@@ -1,41 +1,41 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
-const compression = require('compression');
-const path = require('path');
-require('dotenv').config();
+const express = require('express')
+const mongoose = require('mongoose')
+const cors = require('cors')
+const helmet = require('helmet')
+const morgan = require('morgan')
+const rateLimit = require('express-rate-limit')
+const compression = require('compression')
+const path = require('path')
+require('dotenv').config()
 
-const app = express();
+const app = express()
 
 // Import routes
-const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/users');
-const chatRoutes = require('./routes/chat_deepseek'); // Using Gemini instead of OpenAI
-const documentRoutes = require('./routes/documents');
-const adminRoutes = require('./routes/admin');
-const { router: notificationRoutes } = require('./routes/notifications');
-const subscriptionRoutes = require('./routes/subscription');
-const searchRoutes = require('./routes/search');
-const systemInstructionRoutes = require('./routes/systemInstructions');
+const authRoutes = require('./routes/auth')
+const userRoutes = require('./routes/users')
+const chatRoutes = require('./routes/chat_deepseek') // Using Gemini instead of OpenAI
+const documentRoutes = require('./routes/documents')
+const adminRoutes = require('./routes/admin')
+const { router: notificationRoutes } = require('./routes/notifications')
+const subscriptionRoutes = require('./routes/subscription')
+const searchRoutes = require('./routes/search')
+const systemInstructionRoutes = require('./routes/systemInstructions')
 
 // Database connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/lawbot', {
   useNewUrlParser: true,
-  useUnifiedTopology: true,
+  useUnifiedTopology: true
 })
-.then(() => {
-  console.log('Connected to MongoDB');
-})
-.catch((error) => {
-  console.error('MongoDB connection error:', error);
-  process.exit(1);
-});
+  .then(() => {
+    console.log('Connected to MongoDB')
+  })
+  .catch((error) => {
+    console.error('MongoDB connection error:', error)
+    process.exit(1)
+  })
 
 // Trust proxy for rate limiting
-app.set('trust proxy', 1);
+app.set('trust proxy', 1)
 
 // Global rate limiting
 const globalRateLimit = rateLimit({
@@ -47,28 +47,28 @@ const globalRateLimit = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false
-});
+})
 
 // Security middleware
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", 'data:', 'https:'],
-      connectSrc: ["'self'", 'https://api.stripe.com', 'https://generativelanguage.googleapis.com']
+      defaultSrc: ['\'self\''],
+      styleSrc: ['\'self\'', '\'unsafe-inline\'', 'https://fonts.googleapis.com'],
+      fontSrc: ['\'self\'', 'https://fonts.gstatic.com'],
+      scriptSrc: ['\'self\''],
+      imgSrc: ['\'self\'', 'data:', 'https:'],
+      connectSrc: ['\'self\'', 'https://api.stripe.com', 'https://generativelanguage.googleapis.com']
     }
   },
   crossOriginEmbedderPolicy: false
-}));
+}))
 
 // CORS configuration
 const corsOptions = {
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+    if (!origin) return callback(null, true)
     
     const allowedOrigins = [
       'http://localhost:3000',
@@ -77,48 +77,48 @@ const corsOptions = {
       'http://192.168.1.2:3000',
       'https://lawbot-frontend.vercel.app',
       process.env.FRONTEND_URL
-    ].filter(Boolean);
+    ].filter(Boolean)
     
-    console.log('CORS check - Origin:', origin, 'Allowed:', allowedOrigins);
+    console.log('CORS check - Origin:', origin, 'Allowed:', allowedOrigins)
     
     if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
+      callback(null, true)
     } else {
-      console.warn('CORS blocked origin:', origin);
+      console.warn('CORS blocked origin:', origin)
       // For development, allow all origins
       if (process.env.NODE_ENV !== 'production') {
-        callback(null, true);
+        callback(null, true)
       } else {
-        callback(new Error('Not allowed by CORS'));
+        callback(new Error('Not allowed by CORS'))
       }
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-};
+}
 
-app.use(cors(corsOptions));
+app.use(cors(corsOptions))
 
 // Compression middleware
-app.use(compression());
+app.use(compression())
 
 // Logging middleware
 if (process.env.NODE_ENV === 'production') {
-  app.use(morgan('combined'));
+  app.use(morgan('combined'))
 } else {
-  app.use(morgan('dev'));
+  app.use(morgan('dev'))
 }
 
 // Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '10mb' }))
+app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 
 // Apply global rate limiting
-app.use(globalRateLimit);
+app.use(globalRateLimit)
 
 // Static files
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -128,19 +128,19 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     version: process.env.npm_package_version || '1.0.0',
     environment: process.env.NODE_ENV || 'development'
-  });
-});
+  })
+})
 
 // API routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/chat', chatRoutes);
-app.use('/api/documents', documentRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/subscription', subscriptionRoutes);
-app.use('/api/search', searchRoutes);
-app.use('/api/system-instructions', systemInstructionRoutes);
+app.use('/api/auth', authRoutes)
+app.use('/api/users', userRoutes)
+app.use('/api/chat', chatRoutes)
+app.use('/api/documents', documentRoutes)
+app.use('/api/admin', adminRoutes)
+app.use('/api/notifications', notificationRoutes)
+app.use('/api/subscription', subscriptionRoutes)
+app.use('/api/search', searchRoutes)
+app.use('/api/system-instructions', systemInstructionRoutes)
 
 // API documentation endpoint
 app.get('/api', (req, res) => {
@@ -238,8 +238,8 @@ app.get('/api', (req, res) => {
       'Rate Limiting & Security',
       'Comprehensive API Documentation'
     ]
-  });
-});
+  })
+})
 
 // 404 handler for API routes
 app.use('/api/*', (req, res) => {
@@ -249,44 +249,44 @@ app.use('/api/*', (req, res) => {
     path: req.originalUrl,
     method: req.method,
     timestamp: new Date().toISOString()
-  });
-});
+  })
+})
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'client/build')));
+  app.use(express.static(path.join(__dirname, 'client/build')))
   
   app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
-  });
+    res.sendFile(path.join(__dirname, 'client/build', 'index.html'))
+  })
 }
 
 // Global error handler
 app.use((error, req, res, next) => {
-  console.error('Global error handler:', error);
+  console.error('Global error handler:', error)
   
   // Mongoose validation error
   if (error.name === 'ValidationError') {
     const errors = Object.values(error.errors).map(err => ({
       field: err.path,
       message: err.message
-    }));
+    }))
     
     return res.status(400).json({
       success: false,
       message: 'Validation failed',
       errors
-    });
+    })
   }
   
   // Mongoose duplicate key error
   if (error.code === 11000) {
-    const field = Object.keys(error.keyValue)[0];
+    const field = Object.keys(error.keyValue)[0]
     return res.status(400).json({
       success: false,
       message: `${field} already exists`,
       field
-    });
+    })
   }
   
   // JWT errors
@@ -294,14 +294,14 @@ app.use((error, req, res, next) => {
     return res.status(401).json({
       success: false,
       message: 'Invalid token'
-    });
+    })
   }
   
   if (error.name === 'TokenExpiredError') {
     return res.status(401).json({
       success: false,
       message: 'Token expired'
-    });
+    })
   }
   
   // CORS errors
@@ -309,61 +309,61 @@ app.use((error, req, res, next) => {
     return res.status(403).json({
       success: false,
       message: 'CORS policy violation'
-    });
+    })
   }
   
   // Default error response
-  const statusCode = error.statusCode || 500;
+  const statusCode = error.statusCode || 500
   const message = process.env.NODE_ENV === 'production' 
     ? 'Internal server error' 
-    : error.message;
+    : error.message
   
   res.status(statusCode).json({
     success: false,
     message,
     ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
-  });
-});
+  })
+})
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err, promise) => {
-  console.error('Unhandled Promise Rejection:', err);
+  console.error('Unhandled Promise Rejection:', err)
   // Close server & exit process
   server.close(() => {
-    process.exit(1);
-  });
-});
+    process.exit(1)
+  })
+})
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception:', err);
-  process.exit(1);
-});
+  console.error('Uncaught Exception:', err)
+  process.exit(1)
+})
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('SIGTERM received. Shutting down gracefully...');
+  console.log('SIGTERM received. Shutting down gracefully...')
   server.close(() => {
-    console.log('Process terminated');
-    mongoose.connection.close();
-  });
-});
+    console.log('Process terminated')
+    mongoose.connection.close()
+  })
+})
 
 process.on('SIGINT', () => {
-  console.log('SIGINT received. Shutting down gracefully...');
+  console.log('SIGINT received. Shutting down gracefully...')
   server.close(() => {
-    console.log('Process terminated');
-    mongoose.connection.close();
-  });
-});
+    console.log('Process terminated')
+    mongoose.connection.close()
+  })
+})
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5000
 const server = app.listen(PORT, () => {
-  console.log(`\n🚀 LawBot API Server running on port ${PORT}`);
-  console.log(`📚 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-  console.log(`📖 API docs: http://localhost:${PORT}/api`);
-  console.log(`⚡ Ready to serve legal consultations!\n`);
-});
+  console.log(`\n🚀 LawBot API Server running on port ${PORT}`)
+  console.log(`📚 Environment: ${process.env.NODE_ENV || 'development'}`)
+  console.log(`🔗 Health check: http://localhost:${PORT}/health`)
+  console.log(`📖 API docs: http://localhost:${PORT}/api`)
+  console.log('⚡ Ready to serve legal consultations!\n')
+})
 
-module.exports = app;
+module.exports = app

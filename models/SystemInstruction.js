@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose')
 
 const systemInstructionSchema = new mongoose.Schema({
   category: {
@@ -38,9 +38,9 @@ const systemInstructionSchema = new mongoose.Schema({
   }
 }, {
   timestamps: true
-});
+})
 
 // Index for faster queries
-systemInstructionSchema.index({ category: 1, isActive: 1 });
+systemInstructionSchema.index({ category: 1, isActive: 1 })
 
-module.exports = mongoose.model('SystemInstruction', systemInstructionSchema);
+module.exports = mongoose.model('SystemInstruction', systemInstructionSchema)

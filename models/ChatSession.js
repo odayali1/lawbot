@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose')
 
 // Enhanced message schema with attachments and improved metadata
 const messageSchema = new mongoose.Schema({
@@ -60,7 +60,7 @@ const messageSchema = new mongoose.Schema({
       default: Date.now
     }
   }]
-});
+})
 
 // Legal references schema for comprehensive legal document tracking
 const legalReferenceSchema = new mongoose.Schema({
@@ -85,8 +85,8 @@ const legalReferenceSchema = new mongoose.Schema({
   url: {
     type: String,
     validate: {
-      validator: function(v) {
-        return !v || /^https?:\/\/.+/.test(v);
+      validator: function (v) {
+        return !v || /^https?:\/\/.+/.test(v)
       },
       message: 'URL must be a valid HTTP/HTTPS URL'
     }
@@ -101,7 +101,7 @@ const legalReferenceSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
-});
+})
 
 const chatSessionSchema = new mongoose.Schema({
   // Basic Information
@@ -310,178 +310,178 @@ const chatSessionSchema = new mongoose.Schema({
   timestamps: true,
   toJSON: { virtuals: true },
   toObject: { virtuals: true }
-});
+})
 
 // Comprehensive indexes for optimal query performance
-chatSessionSchema.index({ user: 1, createdAt: -1 });
-chatSessionSchema.index({ user: 1, status: 1 });
-chatSessionSchema.index({ category: 1, status: 1 });
-chatSessionSchema.index({ tags: 1 });
-chatSessionSchema.index({ lastActivity: -1 });
-chatSessionSchema.index({ priority: 1, status: 1 });
-chatSessionSchema.index({ 'feedback.rating': 1 });
-chatSessionSchema.index({ 'legalContext.complexity': 1 });
-chatSessionSchema.index({ 'configuration.language': 1 });
-chatSessionSchema.index({ completedAt: 1 });
+chatSessionSchema.index({ user: 1, createdAt: -1 })
+chatSessionSchema.index({ user: 1, status: 1 })
+chatSessionSchema.index({ category: 1, status: 1 })
+chatSessionSchema.index({ tags: 1 })
+chatSessionSchema.index({ lastActivity: -1 })
+chatSessionSchema.index({ priority: 1, status: 1 })
+chatSessionSchema.index({ 'feedback.rating': 1 })
+chatSessionSchema.index({ 'legalContext.complexity': 1 })
+chatSessionSchema.index({ 'configuration.language': 1 })
+chatSessionSchema.index({ completedAt: 1 })
 
 // Virtual properties
-chatSessionSchema.virtual('formattedDuration').get(function() {
-  if (!this.analytics.sessionDuration) return '0 minutes';
-  const minutes = Math.floor(this.analytics.sessionDuration / 60000);
-  const seconds = Math.floor((this.analytics.sessionDuration % 60000) / 1000);
-  return minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
-});
+chatSessionSchema.virtual('formattedDuration').get(function () {
+  if (!this.analytics.sessionDuration) return '0 minutes'
+  const minutes = Math.floor(this.analytics.sessionDuration / 60000)
+  const seconds = Math.floor((this.analytics.sessionDuration % 60000) / 1000)
+  return minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`
+})
 
-chatSessionSchema.virtual('messageCount').get(function() {
-  return this.messages.length;
-});
+chatSessionSchema.virtual('messageCount').get(function () {
+  return this.messages.length
+})
 
-chatSessionSchema.virtual('lastMessage').get(function() {
-  return this.messages.length > 0 ? this.messages[this.messages.length - 1] : null;
-});
+chatSessionSchema.virtual('lastMessage').get(function () {
+  return this.messages.length > 0 ? this.messages[this.messages.length - 1] : null
+})
 
-chatSessionSchema.virtual('sessionAge').get(function() {
-  const now = new Date();
-  const created = this.createdAt;
-  const diffTime = Math.abs(now - created);
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays;
-});
+chatSessionSchema.virtual('sessionAge').get(function () {
+  const now = new Date()
+  const created = this.createdAt
+  const diffTime = Math.abs(now - created)
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  return diffDays
+})
 
-chatSessionSchema.virtual('isActive').get(function() {
-  return this.status === 'active';
-});
+chatSessionSchema.virtual('isActive').get(function () {
+  return this.status === 'active'
+})
 
-chatSessionSchema.virtual('averageMessageLength').get(function() {
-  if (this.messages.length === 0) return 0;
-  const totalLength = this.messages.reduce((sum, msg) => sum + msg.content.length, 0);
-  return Math.round(totalLength / this.messages.length);
-});
+chatSessionSchema.virtual('averageMessageLength').get(function () {
+  if (this.messages.length === 0) return 0
+  const totalLength = this.messages.reduce((sum, msg) => sum + msg.content.length, 0)
+  return Math.round(totalLength / this.messages.length)
+})
 
 // Enhanced pre-save middleware
-chatSessionSchema.pre('save', function(next) {
+chatSessionSchema.pre('save', function (next) {
   // Update analytics when messages are modified
   if (this.isModified('messages')) {
-    this.lastActivity = new Date();
-    this.analytics.totalMessages = this.messages.length;
+    this.lastActivity = new Date()
+    this.analytics.totalMessages = this.messages.length
     
     // Calculate total tokens
     this.analytics.totalTokens = this.messages.reduce((total, msg) => {
-      return total + (msg.metadata?.tokens || 0);
-    }, 0);
+      return total + (msg.metadata?.tokens || 0)
+    }, 0)
     
     // Calculate average response time
     const responseTimes = this.messages
       .filter(msg => msg.metadata?.processingTime)
-      .map(msg => msg.metadata.processingTime);
+      .map(msg => msg.metadata.processingTime)
     
     if (responseTimes.length > 0) {
-      this.analytics.averageResponseTime = responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length;
+      this.analytics.averageResponseTime = responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
     }
     
     // Calculate session duration
     if (this.messages.length > 1) {
-      const firstMessage = this.messages[0];
-      const lastMessage = this.messages[this.messages.length - 1];
-      this.analytics.sessionDuration = lastMessage.timestamp - firstMessage.timestamp;
+      const firstMessage = this.messages[0]
+      const lastMessage = this.messages[this.messages.length - 1]
+      this.analytics.sessionDuration = lastMessage.timestamp - firstMessage.timestamp
     }
     
     // Update AI metadata
     const confidenceScores = this.messages
       .filter(msg => msg.metadata?.confidence)
-      .map(msg => msg.metadata.confidence);
+      .map(msg => msg.metadata.confidence)
     
     if (confidenceScores.length > 0) {
-      this.aiMetadata.averageConfidence = confidenceScores.reduce((a, b) => a + b, 0) / confidenceScores.length;
+      this.aiMetadata.averageConfidence = confidenceScores.reduce((a, b) => a + b, 0) / confidenceScores.length
     }
     
     // Auto-generate title if not set and we have messages
     if (!this.title && this.messages.length > 0) {
-      const firstUserMessage = this.messages.find(msg => msg.role === 'user');
+      const firstUserMessage = this.messages.find(msg => msg.role === 'user')
       if (firstUserMessage) {
-        this.title = firstUserMessage.content.substring(0, 50) + (firstUserMessage.content.length > 50 ? '...' : '');
+        this.title = firstUserMessage.content.substring(0, 50) + (firstUserMessage.content.length > 50 ? '...' : '')
       }
     }
   }
   
   // Update completion status
   if (this.isModified('status') && this.status === 'completed' && !this.completedAt) {
-    this.completedAt = new Date();
+    this.completedAt = new Date()
   }
   
-  next();
-});
+  next()
+})
 
 // Instance Methods
 
 // Enhanced method to add a message with attachments
-chatSessionSchema.methods.addMessage = function(role, content, metadata = {}, attachments = []) {
+chatSessionSchema.methods.addMessage = function (role, content, metadata = {}, attachments = []) {
   const message = {
     role,
     content,
     metadata,
     attachments,
     timestamp: new Date()
-  };
+  }
   
-  this.messages.push(message);
-  this.lastActivity = new Date();
+  this.messages.push(message)
+  this.lastActivity = new Date()
   
-  return this.save();
-};
+  return this.save()
+}
 
 // Method to add legal reference
-chatSessionSchema.methods.addLegalReference = function(referenceData) {
+chatSessionSchema.methods.addLegalReference = function (referenceData) {
   this.legalReferences.push({
     ...referenceData,
     addedAt: new Date()
-  });
-  return this.save();
-};
+  })
+  return this.save()
+}
 
 // Method to rate the session
-chatSessionSchema.methods.rateSession = function(rating, comment = '', categories = []) {
+chatSessionSchema.methods.rateSession = function (rating, comment = '', categories = []) {
   this.feedback = {
     rating,
     comment,
     categories,
     ratedAt: new Date()
-  };
-  return this.save();
-};
+  }
+  return this.save()
+}
 
 // Method to archive session
-chatSessionSchema.methods.archive = function() {
-  this.status = 'archived';
-  return this.save();
-};
+chatSessionSchema.methods.archive = function () {
+  this.status = 'archived'
+  return this.save()
+}
 
 // Method to soft delete session
-chatSessionSchema.methods.softDelete = function() {
-  this.status = 'deleted';
-  return this.save();
-};
+chatSessionSchema.methods.softDelete = function () {
+  this.status = 'deleted'
+  return this.save()
+}
 
 // Method to complete session
-chatSessionSchema.methods.complete = function() {
-  this.status = 'completed';
-  this.completedAt = new Date();
-  return this.save();
-};
+chatSessionSchema.methods.complete = function () {
+  this.status = 'completed'
+  this.completedAt = new Date()
+  return this.save()
+}
 
 // Method to get conversation context for AI
-chatSessionSchema.methods.getContext = function(limit = 10) {
+chatSessionSchema.methods.getContext = function (limit = 10) {
   return this.messages
     .slice(-limit)
     .map(msg => ({
       role: msg.role,
       content: msg.content,
       timestamp: msg.timestamp
-    }));
-};
+    }))
+}
 
 // Method to get session summary
-chatSessionSchema.methods.getSessionSummary = function() {
+chatSessionSchema.methods.getSessionSummary = function () {
   return {
     id: this._id,
     title: this.title,
@@ -493,38 +493,38 @@ chatSessionSchema.methods.getSessionSummary = function() {
     createdAt: this.createdAt,
     lastActivity: this.lastActivity,
     complexity: this.legalContext.complexity
-  };
-};
+  }
+}
 
 // Method to update session configuration
-chatSessionSchema.methods.updateConfiguration = function(config) {
-  this.configuration = { ...this.configuration, ...config };
-  return this.save();
-};
+chatSessionSchema.methods.updateConfiguration = function (config) {
+  this.configuration = { ...this.configuration, ...config }
+  return this.save()
+}
 
 // Method to share session with user
-chatSessionSchema.methods.shareWith = function(userId, permission = 'read') {
-  const existingShare = this.sharedWith.find(share => share.user.toString() === userId.toString());
+chatSessionSchema.methods.shareWith = function (userId, permission = 'read') {
+  const existingShare = this.sharedWith.find(share => share.user.toString() === userId.toString())
   
   if (existingShare) {
-    existingShare.permission = permission;
-    existingShare.sharedAt = new Date();
+    existingShare.permission = permission
+    existingShare.sharedAt = new Date()
   } else {
     this.sharedWith.push({
       user: userId,
       permission,
       sharedAt: new Date()
-    });
+    })
   }
   
-  this.isShared = true;
-  return this.save();
-};
+  this.isShared = true
+  return this.save()
+}
 
 // Static Methods
 
 // Find sessions by user with pagination and filtering
-chatSessionSchema.statics.findByUser = function(userId, options = {}) {
+chatSessionSchema.statics.findByUser = function (userId, options = {}) {
   const {
     status = 'active',
     category,
@@ -532,31 +532,31 @@ chatSessionSchema.statics.findByUser = function(userId, options = {}) {
     limit = 20,
     sortBy = 'lastActivity',
     sortOrder = -1
-  } = options;
+  } = options
   
-  const query = { user: userId };
+  const query = { user: userId }
   
   if (status !== 'all') {
-    query.status = status;
+    query.status = status
   }
   
   if (category) {
-    query.category = category;
+    query.category = category
   }
   
-  const skip = (page - 1) * limit;
-  const sort = { [sortBy]: sortOrder };
+  const skip = (page - 1) * limit
+  const sort = { [sortBy]: sortOrder }
   
   return this.find(query)
     .sort(sort)
     .skip(skip)
     .limit(limit)
     .populate('user', 'name email')
-    .lean();
-};
+    .lean()
+}
 
 // Get user session statistics
-chatSessionSchema.statics.getUserSessionStats = function(userId) {
+chatSessionSchema.statics.getUserSessionStats = function (userId) {
   return this.aggregate([
     { $match: { user: mongoose.Types.ObjectId(userId) } },
     {
@@ -576,12 +576,12 @@ chatSessionSchema.statics.getUserSessionStats = function(userId) {
         categoriesUsed: { $addToSet: '$category' }
       }
     }
-  ]);
-};
+  ])
+}
 
 // Find sessions needing attention (high priority, long inactive)
-chatSessionSchema.statics.findSessionsNeedingAttention = function() {
-  const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+chatSessionSchema.statics.findSessionsNeedingAttention = function () {
+  const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
   
   return this.find({
     $or: [
@@ -590,19 +590,19 @@ chatSessionSchema.statics.findSessionsNeedingAttention = function() {
       { 'feedback.rating': { $lt: 3 } }
     ]
   })
-  .populate('user', 'name email')
-  .sort({ priority: -1, lastActivity: 1 });
-};
+    .populate('user', 'name email')
+    .sort({ priority: -1, lastActivity: 1 })
+}
 
 // Get session analytics for admin dashboard
-chatSessionSchema.statics.getSessionAnalytics = function(dateRange = {}) {
-  const { startDate, endDate } = dateRange;
-  const matchStage = {};
+chatSessionSchema.statics.getSessionAnalytics = function (dateRange = {}) {
+  const { startDate, endDate } = dateRange
+  const matchStage = {}
   
   if (startDate || endDate) {
-    matchStage.createdAt = {};
-    if (startDate) matchStage.createdAt.$gte = new Date(startDate);
-    if (endDate) matchStage.createdAt.$lte = new Date(endDate);
+    matchStage.createdAt = {}
+    if (startDate) matchStage.createdAt.$gte = new Date(startDate)
+    if (endDate) matchStage.createdAt.$lte = new Date(endDate)
   }
   
   return this.aggregate([
@@ -621,19 +621,19 @@ chatSessionSchema.statics.getSessionAnalytics = function(dateRange = {}) {
       }
     },
     { $sort: { '_id.date': -1, '_id.category': 1 } }
-  ]);
-};
+  ])
+}
 
 // Find sessions by legal complexity
-chatSessionSchema.statics.findByComplexity = function(complexity, limit = 50) {
+chatSessionSchema.statics.findByComplexity = function (complexity, limit = 50) {
   return this.find({ 'legalContext.complexity': complexity })
     .populate('user', 'name email role')
     .sort({ createdAt: -1 })
-    .limit(limit);
-};
+    .limit(limit)
+}
 
 // Search sessions by content
-chatSessionSchema.statics.searchSessions = function(searchTerm, userId = null) {
+chatSessionSchema.statics.searchSessions = function (searchTerm, userId = null) {
   const query = {
     $or: [
       { title: { $regex: searchTerm, $options: 'i' } },
@@ -641,16 +641,16 @@ chatSessionSchema.statics.searchSessions = function(searchTerm, userId = null) {
       { tags: { $regex: searchTerm, $options: 'i' } },
       { 'messages.content': { $regex: searchTerm, $options: 'i' } }
     ]
-  };
+  }
   
   if (userId) {
-    query.user = userId;
+    query.user = userId
   }
   
   return this.find(query)
     .populate('user', 'name email')
     .sort({ lastActivity: -1 })
-    .limit(100);
-};
+    .limit(100)
+}
 
-module.exports = mongoose.model('ChatSession', chatSessionSchema);
+module.exports = mongoose.model('ChatSession', chatSessionSchema)

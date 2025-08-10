@@ -3,8 +3,6 @@ import { useAuth } from '../contexts/AuthContext.tsx';
 import LoadingSpinner from '../components/LoadingSpinner.tsx';
 import {
   UserIcon,
-  EnvelopeIcon,
-  KeyIcon,
   ShieldCheckIcon,
   CreditCardIcon,
   BellIcon,
@@ -28,7 +26,7 @@ const Profile: React.FC = () => {
     email: user?.email || '',
     licenseNumber: user?.licenseNumber || '',
     barAssociation: user?.barAssociation || '',
-    specialization: user?.specialization || '',
+    specialization: user?.specialization || [],
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -145,14 +143,14 @@ const Profile: React.FC = () => {
   };
 
   const getSubscriptionStatus = () => {
-    const plan = user?.subscription.plan || 'free';
-    const expiresAt = user?.subscription.expiresAt;
-    const isActive = !expiresAt || new Date(expiresAt) > new Date();
+    const plan = user?.subscription.plan || 'basic';
+    const endDate = user?.subscription.endDate;
+    const isActive = user?.subscription.status === 'active';
     
     return {
       plan: plan.charAt(0).toUpperCase() + plan.slice(1),
-      status: isActive ? 'Active' : 'Expired',
-      expiresAt: expiresAt ? new Date(expiresAt).toLocaleDateString() : 'Never',
+      status: isActive ? 'Active' : 'Inactive',
+      expiresAt: endDate ? new Date(endDate).toLocaleDateString() : 'Never',
       color: isActive ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'
     };
   };
@@ -280,8 +278,8 @@ const Profile: React.FC = () => {
                       Specialization
                     </label>
                     <select
-                      value={profileData.specialization}
-                      onChange={(e) => setProfileData({ ...profileData, specialization: e.target.value })}
+                      value={Array.isArray(profileData.specialization) ? profileData.specialization[0] || '' : profileData.specialization}
+                      onChange={(e) => setProfileData({ ...profileData, specialization: [e.target.value] })}
                       className="input w-full"
                       required
                     >
@@ -435,20 +433,20 @@ const Profile: React.FC = () => {
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div className="text-center p-4 bg-white rounded-lg">
-                      <p className="text-2xl font-bold text-primary-600">{user?.usage.queriesThisMonth || 0}</p>
+                      <p className="text-2xl font-bold text-primary-600">{user?.usage?.queriesThisMonth || 0}</p>
                       <p className="text-sm text-gray-600">Queries Used</p>
                     </div>
                     <div className="text-center p-4 bg-white rounded-lg">
                       <p className="text-2xl font-bold text-green-600">
-                        {user?.subscription.plan === 'free' ? 10 :
-                         user?.subscription.plan === 'basic' ? 100 : 500}
+                        {user?.subscription.plan === 'basic' ? 100 :
+                         user?.subscription.plan === 'pro' ? 500 : 1000}
                       </p>
                       <p className="text-sm text-gray-600">Monthly Limit</p>
                     </div>
                     <div className="text-center p-4 bg-white rounded-lg">
                       <p className="text-2xl font-bold text-blue-600">
-                        {Math.max(0, (user?.subscription.plan === 'free' ? 10 :
-                                     user?.subscription.plan === 'basic' ? 100 : 500) - (user?.usage.queriesThisMonth || 0))}
+                        {Math.max(0, (user?.subscription.plan === 'basic' ? 100 :
+                                     user?.subscription.plan === 'pro' ? 500 : 1000) - (user?.usage?.queriesThisMonth || 0))}
                       </p>
                       <p className="text-sm text-gray-600">Remaining</p>
                     </div>

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose')
 
 const articleSchema = new mongoose.Schema({
   number: {
@@ -19,7 +19,7 @@ const articleSchema = new mongoose.Schema({
   }],
   keywords: [String],
   relatedArticles: [String]
-});
+})
 
 const legalDocumentSchema = new mongoose.Schema({
   title: {
@@ -179,16 +179,16 @@ const legalDocumentSchema = new mongoose.Schema({
   }
 }, {
   timestamps: true
-});
+})
 
 // Indexes for better search performance
-legalDocumentSchema.index({ type: 1, category: 1 });
-legalDocumentSchema.index({ officialNumber: 1 });
-legalDocumentSchema.index({ status: 1, effectiveDate: -1 });
-legalDocumentSchema.index({ 'articles.number': 1 });
+legalDocumentSchema.index({ type: 1, category: 1 })
+legalDocumentSchema.index({ officialNumber: 1 })
+legalDocumentSchema.index({ status: 1, effectiveDate: -1 })
+legalDocumentSchema.index({ 'articles.number': 1 })
 
 // Pre-save middleware to update search index
-legalDocumentSchema.pre('save', function(next) {
+legalDocumentSchema.pre('save', function (next) {
   if (this.isModified('articles') || this.isModified('title') || this.isModified('summary')) {
     // Build full text search index
     const fullTextParts = [
@@ -196,62 +196,62 @@ legalDocumentSchema.pre('save', function(next) {
       this.summary,
       ...this.articles.map(article => `${article.title} ${article.content}`),
       ...this.keywords.map(kw => kw.term)
-    ].filter(Boolean);
+    ].filter(Boolean)
     
     const arabicTextParts = [
       this.titleArabic,
       this.summaryArabic,
       ...this.keywords.map(kw => kw.termArabic)
-    ].filter(Boolean);
+    ].filter(Boolean)
     
-    this.searchIndex.fullText = fullTextParts.join(' ');
-    this.searchIndex.arabicText = arabicTextParts.join(' ');
-    this.searchIndex.lastIndexed = new Date();
+    this.searchIndex.fullText = fullTextParts.join(' ')
+    this.searchIndex.arabicText = arabicTextParts.join(' ')
+    this.searchIndex.lastIndexed = new Date()
   }
-  next();
-});
+  next()
+})
 
 // Method to find article by number
-legalDocumentSchema.methods.findArticle = function(articleNumber) {
-  return this.articles.find(article => article.number === articleNumber);
-};
+legalDocumentSchema.methods.findArticle = function (articleNumber) {
+  return this.articles.find(article => article.number === articleNumber)
+}
 
 // Method to search within document
-legalDocumentSchema.methods.searchContent = function(query) {
-  const regex = new RegExp(query, 'i');
+legalDocumentSchema.methods.searchContent = function (query) {
+  const regex = new RegExp(query, 'i')
   return this.articles.filter(article => 
     regex.test(article.title) || 
     regex.test(article.content) ||
     article.keywords.some(keyword => regex.test(keyword))
-  );
-};
+  )
+}
 
 // Method to increment usage count
-legalDocumentSchema.methods.incrementUsage = function(articleNumber = null) {
+legalDocumentSchema.methods.incrementUsage = function (articleNumber = null) {
   // Initialize usage if it doesn't exist
   if (!this.usage) {
-    this.usage = { queryCount: 0, popularArticles: [] };
+    this.usage = { queryCount: 0, popularArticles: [] }
   }
   if (typeof this.usage.queryCount !== 'number') {
-    this.usage.queryCount = 0;
+    this.usage.queryCount = 0
   }
   if (!Array.isArray(this.usage.popularArticles)) {
-    this.usage.popularArticles = [];
+    this.usage.popularArticles = []
   }
   
-  this.usage.queryCount += 1;
-  this.usage.lastQueried = new Date();
+  this.usage.queryCount += 1
+  this.usage.lastQueried = new Date()
   
   if (articleNumber) {
-    const popularArticle = this.usage.popularArticles.find(pa => pa.articleNumber === articleNumber);
+    const popularArticle = this.usage.popularArticles.find(pa => pa.articleNumber === articleNumber)
     if (popularArticle) {
-      popularArticle.queryCount += 1;
+      popularArticle.queryCount += 1
     } else {
-      this.usage.popularArticles.push({ articleNumber, queryCount: 1 });
+      this.usage.popularArticles.push({ articleNumber, queryCount: 1 })
     }
   }
   
-  return this.save();
-};
+  return this.save()
+}
 
-module.exports = mongoose.model('LegalDocument', legalDocumentSchema);
+module.exports = mongoose.model('LegalDocument', legalDocumentSchema)

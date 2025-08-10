@@ -1,6 +1,6 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-const winston = require('winston');
+const jwt = require('jsonwebtoken')
+const User = require('../models/User')
+const winston = require('winston')
 
 // Configure logger
 const logger = winston.createLogger({
@@ -18,7 +18,7 @@ const logger = winston.createLogger({
       )
     })
   ]
-});
+})
 
 /**
  * Middleware to authenticate JWT tokens
@@ -29,27 +29,27 @@ const logger = winston.createLogger({
 const authenticateToken = async (req, res, next) => {
   try {
     // Get token from header
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+    const authHeader = req.headers['authorization']
+    const token = authHeader && authHeader.split(' ')[1] // Bearer TOKEN
 
     if (!token) {
       return res.status(401).json({
         success: false,
         message: 'Access token is required'
-      });
+      })
     }
 
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET)
     
     // Get user from database
-    const user = await User.findById(decoded.userId).select('-password');
+    const user = await User.findById(decoded.userId).select('-password')
     
     if (!user) {
       return res.status(401).json({
         success: false,
         message: 'Invalid token - user not found'
-      });
+      })
     }
 
     // Check if user account is active
@@ -57,35 +57,35 @@ const authenticateToken = async (req, res, next) => {
       return res.status(403).json({
         success: false,
         message: 'Account is deactivated'
-      });
+      })
     }
 
     // Add user to request object
-    req.user = user;
-    next();
+    req.user = user
+    next()
   } catch (error) {
-    logger.error('Authentication error:', error.message);
+    logger.error('Authentication error:', error.message)
     
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({
         success: false,
         message: 'Invalid token'
-      });
+      })
     }
     
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({
         success: false,
         message: 'Token expired'
-      });
+      })
     }
     
     return res.status(500).json({
       success: false,
       message: 'Authentication failed'
-    });
+    })
   }
-};
+}
 
 /**
  * Middleware to check if user is admin
@@ -98,18 +98,18 @@ const requireAdmin = (req, res, next) => {
     return res.status(401).json({
       success: false,
       message: 'Authentication required'
-    });
+    })
   }
 
   if (req.user.role !== 'admin') {
     return res.status(403).json({
       success: false,
       message: 'Admin access required'
-    });
+    })
   }
 
-  next();
-};
+  next()
+}
 
 /**
  * Middleware to check if user is lawyer
@@ -122,18 +122,18 @@ const requireLawyer = (req, res, next) => {
     return res.status(401).json({
       success: false,
       message: 'Authentication required'
-    });
+    })
   }
 
   if (req.user.role !== 'lawyer' && req.user.role !== 'admin') {
     return res.status(403).json({
       success: false,
       message: 'Lawyer access required'
-    });
+    })
   }
 
-  next();
-};
+  next()
+}
 
 /**
  * Middleware to check subscription limits
@@ -147,20 +147,20 @@ const checkSubscriptionLimits = async (req, res, next) => {
       return res.status(401).json({
         success: false,
         message: 'Authentication required'
-      });
+      })
     }
 
-    const user = req.user;
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth();
-    const currentYear = currentDate.getFullYear();
+    const user = req.user
+    const currentDate = new Date()
+    const currentMonth = currentDate.getMonth()
+    const currentYear = currentDate.getFullYear()
 
     // Reset monthly usage if it's a new month
     if (user.subscription.lastResetDate.getMonth() !== currentMonth || 
         user.subscription.lastResetDate.getFullYear() !== currentYear) {
-      user.subscription.monthlyUsage = 0;
-      user.subscription.lastResetDate = currentDate;
-      await user.save();
+      user.subscription.monthlyUsage = 0
+      user.subscription.lastResetDate = currentDate
+      await user.save()
     }
 
     // Check if user has exceeded monthly limit
@@ -168,9 +168,9 @@ const checkSubscriptionLimits = async (req, res, next) => {
       basic: parseInt(process.env.BASIC_PLAN_QUERIES) || 50,
       pro: parseInt(process.env.PRO_PLAN_QUERIES) || 200,
       enterprise: parseInt(process.env.ENTERPRISE_PLAN_QUERIES) || 1000
-    };
+    }
 
-    const userLimit = limits[user.subscription.plan] || limits.basic;
+    const userLimit = limits[user.subscription.plan] || limits.basic
 
     if (user.subscription.monthlyUsage >= userLimit) {
       return res.status(429).json({
@@ -181,18 +181,18 @@ const checkSubscriptionLimits = async (req, res, next) => {
           limit: userLimit,
           plan: user.subscription.plan
         }
-      });
+      })
     }
 
-    next();
+    next()
   } catch (error) {
-    logger.error('Subscription check error:', error.message);
+    logger.error('Subscription check error:', error.message)
     return res.status(500).json({
       success: false,
       message: 'Failed to check subscription limits'
-    });
+    })
   }
-};
+}
 
 /**
  * Middleware to increment usage count
@@ -209,15 +209,15 @@ const incrementUsage = async (req, res, next) => {
           $inc: { 'subscription.monthlyUsage': 1 },
           $set: { 'lastActivity': new Date() }
         }
-      );
+      )
     }
-    next();
+    next()
   } catch (error) {
-    logger.error('Usage increment error:', error.message);
+    logger.error('Usage increment error:', error.message)
     // Don't block the request if usage increment fails
-    next();
+    next()
   }
-};
+}
 
 /**
  * Optional authentication middleware (doesn't require token)
@@ -227,24 +227,24 @@ const incrementUsage = async (req, res, next) => {
  */
 const optionalAuth = async (req, res, next) => {
   try {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+    const authHeader = req.headers['authorization']
+    const token = authHeader && authHeader.split(' ')[1]
 
     if (token) {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const user = await User.findById(decoded.userId).select('-password');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET)
+      const user = await User.findById(decoded.userId).select('-password')
       
       if (user && user.isActive) {
-        req.user = user;
+        req.user = user
       }
     }
     
-    next();
+    next()
   } catch (error) {
     // Ignore authentication errors for optional auth
-    next();
+    next()
   }
-};
+}
 
 /**
  * Middleware to validate refresh token
@@ -254,36 +254,36 @@ const optionalAuth = async (req, res, next) => {
  */
 const validateRefreshToken = async (req, res, next) => {
   try {
-    const { refreshToken } = req.body;
+    const { refreshToken } = req.body
 
     if (!refreshToken) {
       return res.status(401).json({
         success: false,
         message: 'Refresh token is required'
-      });
+      })
     }
 
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-    const user = await User.findById(decoded.userId).select('-password');
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET)
+    const user = await User.findById(decoded.userId).select('-password')
 
     if (!user || !user.isActive) {
       return res.status(401).json({
         success: false,
         message: 'Invalid refresh token'
-      });
+      })
     }
 
-    req.user = user;
-    next();
+    req.user = user
+    next()
   } catch (error) {
-    logger.error('Refresh token validation error:', error.message);
+    logger.error('Refresh token validation error:', error.message)
     
     return res.status(401).json({
       success: false,
       message: 'Invalid refresh token'
-    });
+    })
   }
-};
+}
 
 module.exports = {
   authenticateToken,
@@ -293,4 +293,4 @@ module.exports = {
   incrementUsage,
   optionalAuth,
   validateRefreshToken
-};
+}

@@ -1,12 +1,12 @@
-const express = require('express');
-const User = require('../models/User');
-const ChatSession = require('../models/ChatSession');
-const { body, validationResult, param, query } = require('express-validator');
-const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
-const rateLimit = require('express-rate-limit');
+const express = require('express')
+const User = require('../models/User')
+const ChatSession = require('../models/ChatSession')
+const { body, validationResult, param, query } = require('express-validator')
+const jwt = require('jsonwebtoken')
+const nodemailer = require('nodemailer')
+const rateLimit = require('express-rate-limit')
 
-const router = express.Router();
+const router = express.Router()
 
 // Rate limiting for notifications
 const notificationRateLimit = rateLimit({
@@ -16,39 +16,39 @@ const notificationRateLimit = rateLimit({
     success: false,
     message: 'Too many notification requests, please try again later'
   }
-});
+})
 
 // Auth middleware
 const authenticateToken = async (req, res, next) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    const token = req.header('Authorization')?.replace('Bearer ', '')
     
     if (!token) {
       return res.status(401).json({
         success: false,
         message: 'Access denied. No token provided.'
-      });
+      })
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET)
+    const user = await User.findById(decoded.userId)
 
     if (!user || !user.isActive) {
       return res.status(401).json({
         success: false,
         message: 'Invalid token or user inactive'
-      });
+      })
     }
 
-    req.user = user;
-    next();
+    req.user = user
+    next()
   } catch (error) {
     res.status(401).json({
       success: false,
       message: 'Invalid token'
-    });
+    })
   }
-};
+}
 
 // Admin middleware
 const requireAdmin = (req, res, next) => {
@@ -56,10 +56,10 @@ const requireAdmin = (req, res, next) => {
     return res.status(403).json({
       success: false,
       message: 'Admin access required'
-    });
+    })
   }
-  next();
-};
+  next()
+}
 
 // Email transporter setup
 const createEmailTransporter = () => {
@@ -71,11 +71,11 @@ const createEmailTransporter = () => {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS
     }
-  });
-};
+  })
+}
 
 // Notification schema (in-memory for this example, should be in database)
-const notifications = new Map();
+const notifications = new Map()
 
 // Notification types
 const NOTIFICATION_TYPES = {
@@ -88,7 +88,7 @@ const NOTIFICATION_TYPES = {
   NEW_FEATURE: 'new_feature',
   SECURITY_ALERT: 'security_alert',
   DOCUMENT_UPDATED: 'document_updated'
-};
+}
 
 // Validation middleware
 const validateNotification = [
@@ -111,7 +111,7 @@ const validateNotification = [
     .optional()
     .isArray()
     .withMessage('Recipients must be an array')
-];
+]
 
 const validatePreferences = [
   body('email')
@@ -130,10 +130,10 @@ const validatePreferences = [
     .optional()
     .isArray()
     .withMessage('Categories must be an array')
-];
+]
 
 // Apply rate limiting
-router.use(notificationRateLimit);
+router.use(notificationRateLimit)
 
 // Helper function to create notification
 const createNotification = (userId, type, title, message, data = {}) => {
@@ -147,22 +147,22 @@ const createNotification = (userId, type, title, message, data = {}) => {
     read: false,
     createdAt: new Date(),
     priority: data.priority || 'medium'
-  };
+  }
 
   if (!notifications.has(userId)) {
-    notifications.set(userId, []);
+    notifications.set(userId, [])
   }
-  notifications.get(userId).push(notification);
+  notifications.get(userId).push(notification)
   
-  return notification;
-};
+  return notification
+}
 
 // Helper function to send email notification
 const sendEmailNotification = async (user, notification) => {
   try {
-    if (!user.notificationPreferences?.email) return;
+    if (!user.notificationPreferences?.email) return
 
-    const transporter = createEmailTransporter();
+    const transporter = createEmailTransporter()
     
     const mailOptions = {
       from: process.env.FROM_EMAIL || 'noreply@lawbot.com',
@@ -192,13 +192,13 @@ const sendEmailNotification = async (user, notification) => {
           </div>
         </div>
       `
-    };
+    }
 
-    await transporter.sendMail(mailOptions);
+    await transporter.sendMail(mailOptions)
   } catch (error) {
-    console.error('Email notification error:', error);
+    console.error('Email notification error:', error)
   }
-};
+}
 
 // @route   GET /api/notifications
 // @desc    Get user notifications
@@ -210,29 +210,29 @@ router.get('/', authenticateToken, async (req, res) => {
       limit = 20,
       unreadOnly = false,
       type
-    } = req.query;
+    } = req.query
 
-    const userNotifications = notifications.get(req.user._id.toString()) || [];
+    const userNotifications = notifications.get(req.user._id.toString()) || []
     
-    let filteredNotifications = userNotifications;
+    let filteredNotifications = userNotifications
     
     if (unreadOnly === 'true') {
-      filteredNotifications = filteredNotifications.filter(n => !n.read);
+      filteredNotifications = filteredNotifications.filter(n => !n.read)
     }
     
     if (type) {
-      filteredNotifications = filteredNotifications.filter(n => n.type === type);
+      filteredNotifications = filteredNotifications.filter(n => n.type === type)
     }
 
     // Sort by creation date (newest first)
-    filteredNotifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    filteredNotifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
     // Pagination
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + parseInt(limit);
-    const paginatedNotifications = filteredNotifications.slice(startIndex, endIndex);
+    const startIndex = (page - 1) * limit
+    const endIndex = startIndex + parseInt(limit)
+    const paginatedNotifications = filteredNotifications.slice(startIndex, endIndex)
 
-    const unreadCount = userNotifications.filter(n => !n.read).length;
+    const unreadCount = userNotifications.filter(n => !n.read).length
 
     res.json({
       success: true,
@@ -244,179 +244,179 @@ router.get('/', authenticateToken, async (req, res) => {
         limit: parseInt(limit)
       },
       unreadCount
-    });
+    })
 
   } catch (error) {
-    console.error('Get notifications error:', error);
+    console.error('Get notifications error:', error)
     res.status(500).json({
       success: false,
       message: 'Error fetching notifications'
-    });
+    })
   }
-});
+})
 
 // @route   PUT /api/notifications/:id/read
 // @desc    Mark notification as read
 // @access  Private
 router.put('/:id/read', authenticateToken, async (req, res) => {
   try {
-    const userNotifications = notifications.get(req.user._id.toString()) || [];
-    const notification = userNotifications.find(n => n.id === req.params.id);
+    const userNotifications = notifications.get(req.user._id.toString()) || []
+    const notification = userNotifications.find(n => n.id === req.params.id)
 
     if (!notification) {
       return res.status(404).json({
         success: false,
         message: 'Notification not found'
-      });
+      })
     }
 
-    notification.read = true;
-    notification.readAt = new Date();
+    notification.read = true
+    notification.readAt = new Date()
 
     res.json({
       success: true,
       message: 'Notification marked as read'
-    });
+    })
 
   } catch (error) {
-    console.error('Mark notification read error:', error);
+    console.error('Mark notification read error:', error)
     res.status(500).json({
       success: false,
       message: 'Error marking notification as read'
-    });
+    })
   }
-});
+})
 
 // @route   PUT /api/notifications/read-all
 // @desc    Mark all notifications as read
 // @access  Private
 router.put('/read-all', authenticateToken, async (req, res) => {
   try {
-    const userNotifications = notifications.get(req.user._id.toString()) || [];
+    const userNotifications = notifications.get(req.user._id.toString()) || []
     
     userNotifications.forEach(notification => {
       if (!notification.read) {
-        notification.read = true;
-        notification.readAt = new Date();
+        notification.read = true
+        notification.readAt = new Date()
       }
-    });
+    })
 
     res.json({
       success: true,
       message: 'All notifications marked as read'
-    });
+    })
 
   } catch (error) {
-    console.error('Mark all notifications read error:', error);
+    console.error('Mark all notifications read error:', error)
     res.status(500).json({
       success: false,
       message: 'Error marking all notifications as read'
-    });
+    })
   }
-});
+})
 
 // @route   DELETE /api/notifications/:id
 // @desc    Delete notification
 // @access  Private
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
-    const userNotifications = notifications.get(req.user._id.toString()) || [];
-    const notificationIndex = userNotifications.findIndex(n => n.id === req.params.id);
+    const userNotifications = notifications.get(req.user._id.toString()) || []
+    const notificationIndex = userNotifications.findIndex(n => n.id === req.params.id)
 
     if (notificationIndex === -1) {
       return res.status(404).json({
         success: false,
         message: 'Notification not found'
-      });
+      })
     }
 
-    userNotifications.splice(notificationIndex, 1);
+    userNotifications.splice(notificationIndex, 1)
 
     res.json({
       success: true,
       message: 'Notification deleted successfully'
-    });
+    })
 
   } catch (error) {
-    console.error('Delete notification error:', error);
+    console.error('Delete notification error:', error)
     res.status(500).json({
       success: false,
       message: 'Error deleting notification'
-    });
+    })
   }
-});
+})
 
 // @route   GET /api/notifications/preferences
 // @desc    Get user notification preferences
 // @access  Private
 router.get('/preferences', authenticateToken, async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('notificationPreferences');
+    const user = await User.findById(req.user._id).select('notificationPreferences')
     
     const defaultPreferences = {
       email: true,
       push: true,
       sms: false,
       categories: Object.values(NOTIFICATION_TYPES)
-    };
+    }
 
-    const preferences = user.notificationPreferences || defaultPreferences;
+    const preferences = user.notificationPreferences || defaultPreferences
 
     res.json({
       success: true,
       preferences
-    });
+    })
 
   } catch (error) {
-    console.error('Get notification preferences error:', error);
+    console.error('Get notification preferences error:', error)
     res.status(500).json({
       success: false,
       message: 'Error fetching notification preferences'
-    });
+    })
   }
-});
+})
 
 // @route   PUT /api/notifications/preferences
 // @desc    Update user notification preferences
 // @access  Private
 router.put('/preferences', authenticateToken, validatePreferences, async (req, res) => {
   try {
-    const errors = validationResult(req);
+    const errors = validationResult(req)
     if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
         message: 'Validation failed',
         errors: errors.array()
-      });
+      })
     }
 
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user._id)
     
     if (!user.notificationPreferences) {
-      user.notificationPreferences = {};
+      user.notificationPreferences = {}
     }
 
     // Update preferences
     Object.keys(req.body).forEach(key => {
-      user.notificationPreferences[key] = req.body[key];
-    });
+      user.notificationPreferences[key] = req.body[key]
+    })
 
-    await user.save();
+    await user.save()
 
     res.json({
       success: true,
       message: 'Notification preferences updated successfully',
       preferences: user.notificationPreferences
-    });
+    })
 
   } catch (error) {
-    console.error('Update notification preferences error:', error);
+    console.error('Update notification preferences error:', error)
     res.status(500).json({
       success: false,
       message: 'Error updating notification preferences'
-    });
+    })
   }
-});
+})
 
 // Admin routes for sending notifications
 
@@ -425,34 +425,34 @@ router.put('/preferences', authenticateToken, validatePreferences, async (req, r
 // @access  Private/Admin
 router.post('/send', authenticateToken, requireAdmin, validateNotification, async (req, res) => {
   try {
-    const errors = validationResult(req);
+    const errors = validationResult(req)
     if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
         message: 'Validation failed',
         errors: errors.array()
-      });
+      })
     }
 
-    const { type, title, message, recipients, priority = 'medium', sendEmail = false } = req.body;
+    const { type, title, message, recipients, priority = 'medium', sendEmail = false } = req.body
 
-    let targetUsers = [];
+    let targetUsers = []
     
     if (recipients && recipients.length > 0) {
       // Send to specific users
-      targetUsers = await User.find({ _id: { $in: recipients }, isActive: true });
+      targetUsers = await User.find({ _id: { $in: recipients }, isActive: true })
     } else {
       // Send to all active users
-      targetUsers = await User.find({ isActive: true });
+      targetUsers = await User.find({ isActive: true })
     }
 
-    const sentNotifications = [];
+    const sentNotifications = []
 
     for (const user of targetUsers) {
       // Check if user wants this type of notification
       if (user.notificationPreferences?.categories && 
           !user.notificationPreferences.categories.includes(type)) {
-        continue;
+        continue
       }
 
       const notification = createNotification(
@@ -461,13 +461,13 @@ router.post('/send', authenticateToken, requireAdmin, validateNotification, asyn
         title,
         message,
         { priority, sentBy: req.user._id }
-      );
+      )
 
-      sentNotifications.push(notification);
+      sentNotifications.push(notification)
 
       // Send email if requested and user has email notifications enabled
       if (sendEmail) {
-        await sendEmailNotification(user, notification);
+        await sendEmailNotification(user, notification)
       }
     }
 
@@ -476,35 +476,35 @@ router.post('/send', authenticateToken, requireAdmin, validateNotification, asyn
       message: `Notification sent to ${sentNotifications.length} users`,
       sentCount: sentNotifications.length,
       totalUsers: targetUsers.length
-    });
+    })
 
   } catch (error) {
-    console.error('Send notification error:', error);
+    console.error('Send notification error:', error)
     res.status(500).json({
       success: false,
       message: 'Error sending notification'
-    });
+    })
   }
-});
+})
 
 // @route   POST /api/notifications/broadcast
 // @desc    Broadcast system notification to all users (admin only)
 // @access  Private/Admin
 router.post('/broadcast', authenticateToken, requireAdmin, validateNotification, async (req, res) => {
   try {
-    const errors = validationResult(req);
+    const errors = validationResult(req)
     if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
         message: 'Validation failed',
         errors: errors.array()
-      });
+      })
     }
 
-    const { type, title, message, priority = 'medium', sendEmail = false } = req.body;
+    const { type, title, message, priority = 'medium', sendEmail = false } = req.body
 
-    const activeUsers = await User.find({ isActive: true });
-    const sentNotifications = [];
+    const activeUsers = await User.find({ isActive: true })
+    const sentNotifications = []
 
     for (const user of activeUsers) {
       const notification = createNotification(
@@ -513,13 +513,13 @@ router.post('/broadcast', authenticateToken, requireAdmin, validateNotification,
         title,
         message,
         { priority, broadcast: true, sentBy: req.user._id }
-      );
+      )
 
-      sentNotifications.push(notification);
+      sentNotifications.push(notification)
 
       // Send email if requested and user has email notifications enabled
       if (sendEmail) {
-        await sendEmailNotification(user, notification);
+        await sendEmailNotification(user, notification)
       }
     }
 
@@ -527,24 +527,24 @@ router.post('/broadcast', authenticateToken, requireAdmin, validateNotification,
       success: true,
       message: `Broadcast notification sent to ${sentNotifications.length} users`,
       sentCount: sentNotifications.length
-    });
+    })
 
   } catch (error) {
-    console.error('Broadcast notification error:', error);
+    console.error('Broadcast notification error:', error)
     res.status(500).json({
       success: false,
       message: 'Error broadcasting notification'
-    });
+    })
   }
-});
+})
 
 // Automated notification functions
 
 // Function to send session completion notification
 const sendSessionCompletionNotification = async (sessionId) => {
   try {
-    const session = await ChatSession.findById(sessionId).populate('user');
-    if (!session) return;
+    const session = await ChatSession.findById(sessionId).populate('user')
+    if (!session) return
 
     const notification = createNotification(
       session.user._id.toString(),
@@ -556,19 +556,19 @@ const sendSessionCompletionNotification = async (sessionId) => {
         actionUrl: `/sessions/${session._id}`,
         priority: 'medium'
       }
-    );
+    )
 
-    await sendEmailNotification(session.user, notification);
+    await sendEmailNotification(session.user, notification)
   } catch (error) {
-    console.error('Session completion notification error:', error);
+    console.error('Session completion notification error:', error)
   }
-};
+}
 
 // Function to send subscription expiry warning
 const sendSubscriptionExpiryWarning = async (userId, daysRemaining) => {
   try {
-    const user = await User.findById(userId);
-    if (!user) return;
+    const user = await User.findById(userId)
+    if (!user) return
 
     const notification = createNotification(
       userId.toString(),
@@ -580,19 +580,19 @@ const sendSubscriptionExpiryWarning = async (userId, daysRemaining) => {
         actionUrl: '/subscription',
         priority: 'high'
       }
-    );
+    )
 
-    await sendEmailNotification(user, notification);
+    await sendEmailNotification(user, notification)
   } catch (error) {
-    console.error('Subscription expiry notification error:', error);
+    console.error('Subscription expiry notification error:', error)
   }
-};
+}
 
 // Function to send query limit warning
 const sendQueryLimitWarning = async (userId, remainingQueries) => {
   try {
-    const user = await User.findById(userId);
-    if (!user) return;
+    const user = await User.findById(userId)
+    if (!user) return
 
     const notification = createNotification(
       userId.toString(),
@@ -604,13 +604,13 @@ const sendQueryLimitWarning = async (userId, remainingQueries) => {
         actionUrl: '/subscription',
         priority: 'medium'
       }
-    );
+    )
 
-    await sendEmailNotification(user, notification);
+    await sendEmailNotification(user, notification)
   } catch (error) {
-    console.error('Query limit warning notification error:', error);
+    console.error('Query limit warning notification error:', error)
   }
-};
+}
 
 // Export notification functions for use in other modules
 module.exports = {
@@ -619,4 +619,4 @@ module.exports = {
   sendSubscriptionExpiryWarning,
   sendQueryLimitWarning,
   NOTIFICATION_TYPES
-};
+}
