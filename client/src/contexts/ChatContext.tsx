@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import axios from 'axios';
 import { useAuth } from './AuthContext.tsx';
 
@@ -76,7 +76,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (user && token) {
       loadSessions();
     }
-  }, [user, token]);
+  }, [user, token, loadSessions]);
 
   const handleError = (error: any, defaultMessage: string) => {
     const message = error.response?.data?.message || error.message || defaultMessage;
@@ -223,7 +223,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const loadSession = async (sessionId: string): Promise<void> => {
+  const loadSession = useCallback(async (sessionId: string): Promise<void> => {
     try {
       setLoading(true);
       setError(null);
@@ -254,9 +254,9 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const loadSessions = async (): Promise<void> => {
+  const loadSessions = useCallback(async (): Promise<void> => {
     try {
       setLoading(true);
       setError(null);
@@ -280,7 +280,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const deleteSession = async (sessionId: string): Promise<void> => {
     try {
@@ -329,9 +329,9 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const clearCurrentSession = (): void => {
+  const clearCurrentSession = useCallback((): void => {
     setCurrentSession(null);
-  };
+  }, []);
 
   const updateSessionTitle = async (sessionId: string, title: string): Promise<void> => {
     try {

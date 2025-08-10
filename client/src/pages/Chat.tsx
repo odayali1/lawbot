@@ -21,9 +21,7 @@ const Chat: React.FC = () => {
     currentSession,
     sessions,
     loading,
-    error,
     sendMessage,
-    createSession,
     loadSession,
     deleteSession,
     archiveSession,
@@ -60,7 +58,7 @@ const Chat: React.FC = () => {
     } else if (!sessionId) {
       clearCurrentSession();
     }
-  }, [sessionId]);
+  }, [sessionId, currentSession?._id, loadSession, clearCurrentSession]);
 
   useEffect(() => {
     scrollToBottom();

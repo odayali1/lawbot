@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { useChat } from '../contexts/ChatContext.tsx';
 import LoadingSpinner from '../components/LoadingSpinner.tsx';
@@ -6,11 +6,8 @@ import {
   ChartBarIcon,
   ClockIcon,
   ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon,
-  CalendarDaysIcon,
   DocumentTextIcon,
   StarIcon,
-  UserGroupIcon,
 } from '@heroicons/react/24/outline';
 import { Line, Bar, Doughnut, Radar } from 'react-chartjs-2';
 import {
@@ -78,18 +75,16 @@ interface AnalyticsData {
 }
 
 const Analytics: React.FC = () => {
-  const { user } = useAuth();
   const { sessions } = useChat();
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('30d');
-  const [activeMetric, setActiveMetric] = useState('queries');
 
   useEffect(() => {
     fetchAnalyticsData();
-  }, [timeRange]);
+  }, [timeRange, fetchAnalyticsData]);
 
-  const fetchAnalyticsData = async () => {
+  const fetchAnalyticsData = useCallback(async () => {
     try {
       setLoading(true);
       // In a real app, this would be an API call
@@ -159,7 +154,7 @@ const Analytics: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [sessions]);
 
   const generateDailyData = () => {
     const data = [];
