@@ -152,9 +152,9 @@ const Chat: React.FC = () => {
   };
 
   const canSendMessage = user?.subscription.plan === 'enterprise' || 
-    (user?.usage.queriesThisMonth || 0) < (
-      user?.subscription.plan === 'free' ? 10 :
-      user?.subscription.plan === 'basic' ? 100 : 500
+    (user?.usage?.queriesThisMonth || 0) < (
+      user?.subscription.plan === 'basic' ? 100 :
+      user?.subscription.plan === 'pro' ? 500 : 10
     );
 
   return (

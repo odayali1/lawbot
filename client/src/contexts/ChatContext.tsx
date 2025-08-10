@@ -72,12 +72,6 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [error, setError] = useState<string | null>(null);
   const { user, token } = useAuth();
 
-  useEffect(() => {
-    if (user && token) {
-      loadSessions();
-    }
-  }, [user, token, loadSessions]);
-
   const handleError = (error: any, defaultMessage: string) => {
     const message = error.response?.data?.message || error.message || defaultMessage;
     setError(message);
@@ -85,6 +79,38 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Don't throw error to prevent uncaught runtime errors
     // The error state will be handled by the UI components
   };
+
+  const loadSessions = useCallback(async (): Promise<void> => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await axios.get('/chat/sessions');
+
+      if (response.data.success) {
+        const sessionsData = response.data.data;
+        if (Array.isArray(sessionsData)) {
+          // Filter out any invalid sessions
+          const validSessions = sessionsData.filter(session => session && session._id);
+          setSessions(validSessions);
+        } else {
+          setSessions([]);
+        }
+      } else {
+        handleError(new Error(response.data.message || 'Failed to load sessions'), 'Failed to load sessions');
+      }
+    } catch (error: any) {
+      handleError(error, 'Failed to load sessions');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (user && token) {
+      loadSessions();
+    }
+  }, [user, token, loadSessions]);
 
   const sendMessage = async (
     message: string, 
@@ -251,32 +277,6 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     } catch (error: any) {
       handleError(error, 'Failed to load session');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const loadSessions = useCallback(async (): Promise<void> => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await axios.get('/chat/sessions');
-
-      if (response.data.success) {
-        const sessionsData = response.data.data;
-        if (Array.isArray(sessionsData)) {
-          // Filter out any invalid sessions
-          const validSessions = sessionsData.filter(session => session && session._id);
-          setSessions(validSessions);
-        } else {
-          setSessions([]);
-        }
-      } else {
-        handleError(new Error(response.data.message || 'Failed to load sessions'), 'Failed to load sessions');
-      }
-    } catch (error: any) {
-      handleError(error, 'Failed to load sessions');
     } finally {
       setLoading(false);
     }

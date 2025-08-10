@@ -80,10 +80,6 @@ const Analytics: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('30d');
 
-  useEffect(() => {
-    fetchAnalyticsData();
-  }, [timeRange, fetchAnalyticsData]);
-
   const fetchAnalyticsData = useCallback(async () => {
     try {
       setLoading(true);
@@ -93,68 +89,79 @@ const Analytics: React.FC = () => {
       const activeSessions = sessions.filter(s => s && s.status === 'active');
       const totalQueries = activeSessions.reduce((sum, session) => sum + session.analytics.totalMessages, 0);
       const totalSessions = activeSessions.length;
-      const averageSessionLength = totalSessions > 0 ? totalQueries / totalSessions : 0;
-      
-      // Generate mock analytics data
-      const mockData: AnalyticsData = {
-        overview: {
-          totalQueries: totalQueries || 156,
-          totalSessions: totalSessions || 42,
-          averageSessionLength: Math.round(averageSessionLength) || 4,
-          averageResponseTime: 2.3,
-          satisfactionScore: 4.2,
-          trendsComparison: {
-            queries: 12.5,
-            sessions: 8.3,
-            satisfaction: 0.2,
-          },
-        },
-        timeSeriesData: {
-          daily: generateDailyData(),
-          weekly: generateWeeklyData(),
-          monthly: generateMonthlyData(),
-        },
-        categoryAnalysis: [
-          { category: 'Civil Law', queries: 45, averageRating: 4.3, responseTime: 2.1 },
-          { category: 'Criminal Law', queries: 32, averageRating: 4.1, responseTime: 2.5 },
-          { category: 'Commercial Law', queries: 28, averageRating: 4.4, responseTime: 2.0 },
-          { category: 'Family Law', queries: 25, averageRating: 4.2, responseTime: 2.3 },
-          { category: 'Administrative Law', queries: 18, averageRating: 4.0, responseTime: 2.8 },
-          { category: 'Constitutional Law', queries: 8, averageRating: 4.5, responseTime: 1.9 },
-        ],
-        performanceMetrics: {
-          responseTimeDistribution: [
-            { range: '< 1s', count: 45 },
-            { range: '1-2s', count: 67 },
-            { range: '2-3s', count: 32 },
-            { range: '3-5s', count: 12 },
-            { range: '> 5s', count: 3 },
-          ],
-          satisfactionDistribution: [
-            { rating: 5, count: 89 },
-            { rating: 4, count: 45 },
-            { rating: 3, count: 18 },
-            { rating: 2, count: 4 },
-            { rating: 1, count: 1 },
-          ],
-          peakUsageHours: generateHourlyData(),
-        },
-        topQuestions: [
-          { question: 'What are the requirements for filing a civil lawsuit?', category: 'Civil Law', frequency: 12, averageRating: 4.5 },
-          { question: 'How to register a company in Jordan?', category: 'Commercial Law', frequency: 10, averageRating: 4.3 },
-          { question: 'What are the penalties for traffic violations?', category: 'Criminal Law', frequency: 8, averageRating: 4.1 },
-          { question: 'Divorce procedures under Jordanian law', category: 'Family Law', frequency: 7, averageRating: 4.4 },
-          { question: 'Employment contract termination rules', category: 'Labor Law', frequency: 6, averageRating: 4.2 },
-        ],
-      };
-      
-      setAnalyticsData(mockData);
+      const avgSessionLength = totalSessions > 0 ? totalQueries / totalSessions : 0;
+
+      // Generate time series data
+      const timeSeriesData = [];
+      const categoryData = [];
+      const overviewData = [];
+
+      // Mock data generation based on time range
+      if (timeRange === '7d') {
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          timeSeriesData.push({
+            date: date.toISOString().split('T')[0],
+            queries: Math.floor(Math.random() * 100) + 20,
+            sessions: Math.floor(Math.random() * 30) + 5
+          });
+        }
+      } else if (timeRange === '30d') {
+        for (let i = 29; i >= 0; i--) {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          timeSeriesData.push({
+            date: date.toISOString().split('T')[0],
+            queries: Math.floor(Math.random() * 150) + 30,
+            sessions: Math.floor(Math.random() * 40) + 8
+          });
+        }
+      } else if (timeRange === '90d') {
+        for (let i = 12; i >= 0; i--) {
+          const startDate = new Date();
+          startDate.setDate(startDate.getDate() - (i * 7));
+          const endDate = new Date(startDate);
+          endDate.setDate(endDate.getDate() + 6);
+          timeSeriesData.push({
+            week: `${startDate.toISOString().split('T')[0]} - ${endDate.toISOString().split('T')[0]}`,
+            queries: Math.floor(Math.random() * 500) + 100,
+            sessions: Math.floor(Math.random() * 150) + 30
+          });
+        }
+      }
+
+      // Generate hourly data for today
+      for (let hour = 0; hour < 24; hour++) {
+        categoryData.push({
+          hour,
+          queries: Math.floor(Math.random() * 20) + 1
+        });
+      }
+
+      // Generate overview data
+      overviewData.push(
+        { name: 'Total Queries', value: totalQueries, change: '+12%', trend: 'up' },
+        { name: 'Active Sessions', value: totalSessions, change: '+8%', trend: 'up' },
+        { name: 'Avg Session Length', value: Math.round(avgSessionLength), change: '-3%', trend: 'down' },
+        { name: 'Response Time', value: '1.2s', change: '+5%', trend: 'down' }
+      );
+
+      setAnalyticsData({
+        overview: overviewData,
+        timeSeries: timeSeriesData,
+        categories: categoryData
+      });
     } catch (error) {
-      console.error('Failed to fetch analytics data:', error);
+      console.error('Error fetching analytics data:', error);
     } finally {
       setLoading(false);
     }
-  }, [sessions]);
+  }, [sessions, timeRange]);
+
+  useEffect(() => {
+    fetchAnalyticsData();
+  }, [timeRange, fetchAnalyticsData]);
 
   const generateDailyData = () => {
     const data = [];
