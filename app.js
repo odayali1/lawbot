@@ -131,6 +131,17 @@ app.get('/health', (req, res) => {
   })
 })
 
+// Duplicate health check under /api for serverless routing compatibility
+app.get('/api/health', (req, res) => {
+  res.json({
+    success: true,
+    message: 'LawBot API is running',
+    timestamp: new Date().toISOString(),
+    version: process.env.npm_package_version || '1.0.0',
+    environment: process.env.NODE_ENV || 'development'
+  })
+})
+
 // API routes
 app.use('/api/auth', authRoutes)
 app.use('/api/users', userRoutes)
@@ -328,42 +339,57 @@ app.use((error, req, res, next) => {
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err, promise) => {
   console.error('Unhandled Promise Rejection:', err)
-  // Close server & exit process
-  server.close(() => {
-    process.exit(1)
-  })
+  // Close server & exit process (if running as a standalone server)
+  if (typeof server !== 'undefined' && server && server.close) {
+    server.close(() => {
+      process.exit(1)
+    })
+  }
 })
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err)
-  process.exit(1)
+  // In serverless, there is no long-lived server to close
+  if (typeof server !== 'undefined' && server && server.close) {
+    server.close(() => process.exit(1))
+  } else {
+    process.exit(1)
+  }
 })
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received. Shutting down gracefully...')
-  server.close(() => {
-    console.log('Process terminated')
-    mongoose.connection.close()
-  })
+  if (typeof server !== 'undefined' && server && server.close) {
+    server.close(() => {
+      console.log('Process terminated')
+      mongoose.connection.close()
+    })
+  }
 })
 
 process.on('SIGINT', () => {
   console.log('SIGINT received. Shutting down gracefully...')
-  server.close(() => {
-    console.log('Process terminated')
-    mongoose.connection.close()
-  })
+  if (typeof server !== 'undefined' && server && server.close) {
+    server.close(() => {
+      console.log('Process terminated')
+      mongoose.connection.close()
+    })
+  }
 })
 
-const PORT = process.env.PORT || 5000
-const server = app.listen(PORT, () => {
-  console.log(`\n🚀 LawBot API Server running on port ${PORT}`)
-  console.log(`📚 Environment: ${process.env.NODE_ENV || 'development'}`)
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`)
-  console.log(`📖 API docs: http://localhost:${PORT}/api`)
-  console.log('⚡ Ready to serve legal consultations!\n')
-})
+// Start server only when running this file directly (not when required by serverless)
+let server
+if (require.main === module) {
+  const PORT = process.env.PORT || 5000
+  server = app.listen(PORT, () => {
+    console.log(`\n🚀 LawBot API Server running on port ${PORT}`)
+    console.log(`📚 Environment: ${process.env.NODE_ENV || 'development'}`)
+    console.log(`🔗 Health check: http://localhost:${PORT}/health`)
+    console.log(`📖 API docs: http://localhost:${PORT}/api`)
+    console.log('⚡ Ready to serve legal consultations!\n')
+  })
+}
 
 module.exports = app
