@@ -21,18 +21,39 @@ const subscriptionRoutes = require('./routes/subscription')
 const searchRoutes = require('./routes/search')
 const systemInstructionRoutes = require('./routes/systemInstructions')
 
-// Database connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/lawbot', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-  .then(() => {
+// Database connection with serverless-friendly approach
+let isConnected = false
+
+const connectToDatabase = async () => {
+  if (isConnected) {
+    return Promise.resolve()
+  }
+
+  try {
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/lawbot', {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      bufferCommands: false, // Disable mongoose buffering
+      bufferMaxEntries: 0, // Disable mongoose buffering
+      serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
+      socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+    })
+    
+    isConnected = true
     console.log('Connected to MongoDB')
-  })
-  .catch((error) => {
+  } catch (error) {
     console.error('MongoDB connection error:', error)
-    process.exit(1)
-  })
+    // In serverless, don't exit - just continue without DB for health checks
+    if (process.env.NODE_ENV !== 'production') {
+      process.exit(1)
+    }
+  }
+}
+
+// Initialize DB connection for non-serverless environments
+if (require.main === module) {
+  connectToDatabase()
+}
 
 // Trust proxy for rate limiting
 app.set('trust proxy', 1)
@@ -120,29 +141,21 @@ app.use(globalRateLimit)
 // Static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 
-// Health check endpoint
+// Health check endpoints (no DB required)
 app.get('/health', (req, res) => {
-  res.json({
-    success: true,
-    message: 'LawBot API is running',
-    timestamp: new Date().toISOString(),
-    version: process.env.npm_package_version || '1.0.0',
-    environment: process.env.NODE_ENV || 'development'
-  })
+  res.json({ status: 'ok', env: process.env.NODE_ENV || 'development', timestamp: new Date().toISOString() })
 })
 
-// Duplicate health check under /api for serverless routing compatibility
 app.get('/api/health', (req, res) => {
-  res.json({
-    success: true,
-    message: 'LawBot API is running',
-    timestamp: new Date().toISOString(),
-    version: process.env.npm_package_version || '1.0.0',
-    environment: process.env.NODE_ENV || 'development'
-  })
+  res.json({ status: 'ok', env: process.env.NODE_ENV || 'development', timestamp: new Date().toISOString() })
 })
 
 // API routes
+app.use('/api', async (req, res, next) => {
+  // Ensure DB is connected in serverless environments before proceeding
+  await connectToDatabase()
+  next()
+})
 app.use('/api/auth', authRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/chat', chatRoutes)
@@ -263,14 +276,14 @@ app.use('/api/*', (req, res) => {
   })
 })
 
-// Serve static files in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'client/build')))
-  
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'client/build', 'index.html'))
-  })
-}
+// Serve static files from the React app (if present)
+const buildPath = path.join(__dirname, 'client', 'build')
+app.use(express.static(buildPath))
+
+// The "catchall" handler: for any request that doesn't match any API route, send back React's index.html file.
+app.get('*', (req, res) => {
+  res.sendFile(path.join(buildPath, 'index.html'))
+})
 
 // Global error handler
 app.use((error, req, res, next) => {
