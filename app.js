@@ -141,7 +141,7 @@ app.use(globalRateLimit)
 // Static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 
-// Health check endpoints (no DB required)
+// Health check endpoints (no DB required) - MUST come before /api middleware
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', env: process.env.NODE_ENV || 'development', timestamp: new Date().toISOString() })
 })
@@ -150,11 +150,25 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', env: process.env.NODE_ENV || 'development', timestamp: new Date().toISOString() })
 })
 
-// API routes
+// API routes that require DB connection
 app.use('/api', async (req, res, next) => {
+  // Skip DB connection for health endpoint
+  if (req.path === '/health') {
+    return next()
+  }
+  
   // Ensure DB is connected in serverless environments before proceeding
-  await connectToDatabase()
-  next()
+  try {
+    await connectToDatabase()
+    next()
+  } catch (error) {
+    console.error('Database connection failed:', error)
+    res.status(500).json({ 
+      success: false,
+      message: 'Database connection failed',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    })
+  }
 })
 app.use('/api/auth', authRoutes)
 app.use('/api/users', userRoutes)
