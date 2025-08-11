@@ -141,20 +141,17 @@ app.use(globalRateLimit)
 // Static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 
-// Health check endpoints (no DB required) - MUST come before /api middleware
+// Health check endpoints (no DB required) - MUST come before any middleware
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', env: process.env.NODE_ENV || 'development', timestamp: new Date().toISOString() })
 })
 
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', env: process.env.NODE_ENV || 'development', timestamp: new Date().toISOString() })
-})
-
-// API routes that require DB connection
+// API routes with conditional DB connection
 app.use('/api', async (req, res, next) => {
   // Skip DB connection for health endpoint
   if (req.path === '/health') {
-    return next()
+    res.json({ status: 'ok', env: process.env.NODE_ENV || 'development', timestamp: new Date().toISOString() })
+    return
   }
   
   // Ensure DB is connected in serverless environments before proceeding
