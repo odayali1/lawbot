@@ -5,7 +5,6 @@ import {
   DocumentTextIcon,
   CloudArrowUpIcon,
   TrashIcon,
-  EyeIcon,
   MagnifyingGlassIcon,
   FunnelIcon,
   CheckCircleIcon,
@@ -176,7 +175,7 @@ const Documents: React.FC = () => {
       formData.append('effectiveDate', uploadForm.effectiveDate);
       formData.append('tags', uploadForm.tags);
 
-      const response = await axios.post('/documents/upload', formData, {
+      await axios.post('/documents/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

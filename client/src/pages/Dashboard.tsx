@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { useChat } from '../contexts/ChatContext.tsx';
 import LoadingSpinner from '../components/LoadingSpinner.tsx';
@@ -64,11 +64,7 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('30d');
 
-  useEffect(() => {
-    fetchDashboardStats();
-  }, [timeRange]);
-
-  const fetchDashboardStats = async () => {
+  const fetchDashboardStats = useCallback(async () => {
     try {
       setLoading(true);
       // In a real app, this would be an API call
@@ -124,11 +120,15 @@ const Dashboard: React.FC = () => {
         categoryDistribution,
       });
     } catch (error) {
-      console.error('Failed to fetch dashboard stats:', error);
+      console.error('Error fetching dashboard stats:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [sessions, user]);
+
+  useEffect(() => {
+    fetchDashboardStats();
+  }, [timeRange, fetchDashboardStats]);
 
   const getSubscriptionLimitColor = () => {
     const usage = user?.usage?.queriesThisMonth || user?.subscription?.monthlyUsage || 0;

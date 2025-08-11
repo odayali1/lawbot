@@ -9,8 +9,6 @@ import {
   CheckIcon,
   ArrowRightIcon,
   ScaleIcon,
-  GlobeAltIcon,
-  AcademicCapIcon,
 } from '@heroicons/react/24/outline';
 
 const Landing: React.FC = () => {
@@ -417,27 +415,27 @@ const Landing: React.FC = () => {
             <div>
               <h4 className="font-semibold mb-4">Product</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white">Features</a></li>
-                <li><a href="#" className="hover:text-white">Pricing</a></li>
-                <li><a href="#" className="hover:text-white">API</a></li>
-                <li><a href="#" className="hover:text-white">Documentation</a></li>
+                <li><button className="hover:text-white text-left">Features</button></li>
+                <li><button className="hover:text-white text-left">Pricing</button></li>
+                <li><button className="hover:text-white text-left">API</button></li>
+                <li><button className="hover:text-white text-left">Documentation</button></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-4">Company</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white">About</a></li>
-                <li><a href="#" className="hover:text-white">Blog</a></li>
-                <li><a href="#" className="hover:text-white">Careers</a></li>
-                <li><a href="#" className="hover:text-white">Contact</a></li>
+                <li><button className="hover:text-white text-left">About</button></li>
+                <li><button className="hover:text-white text-left">Blog</button></li>
+                <li><button className="hover:text-white text-left">Careers</button></li>
+                <li><button className="hover:text-white text-left">Contact</button></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-4">Legal</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-white">Terms of Service</a></li>
-                <li><a href="#" className="hover:text-white">Cookie Policy</a></li>
+                <li><button className="hover:text-white text-left">Privacy Policy</button></li>
+                <li><button className="hover:text-white text-left">Terms of Service</button></li>
+                <li><button className="hover:text-white text-left">Cookie Policy</button></li>
               </ul>
             </div>
           </div>

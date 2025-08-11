@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../contexts/AuthContext.tsx';
 import { useChat } from '../contexts/ChatContext.tsx';
 import LoadingSpinner from '../components/LoadingSpinner.tsx';
 import {
@@ -206,54 +205,13 @@ const Analytics: React.FC = () => {
     fetchAnalyticsData();
   }, [timeRange, fetchAnalyticsData]);
 
-  const generateDailyData = () => {
-    const data: any[] = [];
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      data.push({
-        date: date.toISOString().split('T')[0],
-        queries: Math.floor(Math.random() * 20) + 5,
-        sessions: Math.floor(Math.random() * 8) + 2,
-      });
-    }
-    return data;
-  };
 
-  const generateWeeklyData = () => {
-    const data: any[] = [];
-    for (let i = 11; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - (i * 7));
-      const weekStart = new Date(date.setDate(date.getDate() - date.getDay()));
-      data.push({
-        week: `Week of ${weekStart.toLocaleDateString()}`,
-        queries: Math.floor(Math.random() * 100) + 50,
-        sessions: Math.floor(Math.random() * 30) + 15,
-      });
-    }
-    return data;
-  };
 
-  const generateMonthlyData = () => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-    return months.map(month => ({
-      month,
-      queries: Math.floor(Math.random() * 200) + 100,
-      sessions: Math.floor(Math.random() * 60) + 30,
-    }));
-  };
 
-  const generateHourlyData = () => {
-    const data: any[] = [];
-    for (let hour = 0; hour < 24; hour++) {
-      data.push({
-        hour,
-        queries: Math.floor(Math.random() * 15) + (hour >= 9 && hour <= 17 ? 10 : 2),
-      });
-    }
-    return data;
-  };
+
+
+
+
 
   const getTimeSeriesData = () => {
     if (!analyticsData) return { labels: [], datasets: [] };
