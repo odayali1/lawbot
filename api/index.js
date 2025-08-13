@@ -76,16 +76,60 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Test endpoint for debugging
+app.get('/test', (req, res) => {
+  res.status(200).json({
+    message: 'API is working!',
+    timestamp: new Date().toISOString(),
+    path: req.path,
+    method: req.method
+  });
+});
+
 // API Routes
 app.use('/auth', authRoutes);
 app.use('/chat', chatRoutes);
 app.use('/users', userRoutes);
+
+// Also handle /api prefixed routes for backward compatibility
+app.use('/api/auth', authRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/users', userRoutes);
 
 // 404 handler for API routes
 app.use('/api/*', (req, res) => {
   res.status(404).json({
     error: 'API Route not found',
     message: `The requested API route ${req.originalUrl} does not exist.`,
+    availableRoutes: [
+      'GET /health',
+      'POST /auth/register',
+      'POST /auth/login',
+      'GET /auth/me',
+      'POST /auth/refresh',
+      'POST /auth/logout',
+      'POST /chat/message',
+      'GET /chat/sessions',
+      'GET /chat/sessions/:id',
+      'DELETE /chat/sessions/:id',
+      'GET /chat/categories',
+      'GET /users/profile',
+      'PUT /users/profile',
+      'POST /users/change-password',
+      'GET /users/dashboard',
+      'PUT /users/subscription',
+      'GET /users/analytics',
+      'GET /users/admin/users',
+      'GET /users/admin/stats'
+    ]
+  });
+});
+
+// 404 handler for direct routes
+app.use('*', (req, res) => {
+  res.status(404).json({
+    error: 'Route not found',
+    message: `The requested route ${req.originalUrl} does not exist.`,
     availableRoutes: [
       'GET /health',
       'POST /auth/register',

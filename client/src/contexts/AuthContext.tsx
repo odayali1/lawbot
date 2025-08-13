@@ -52,7 +52,7 @@ interface RegisterData {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Configure axios defaults
-axios.defaults.baseURL = process.env.REACT_APP_API_URL || '/api';
+axios.defaults.baseURL = process.env.REACT_APP_API_URL || '';
 
 // Add request interceptor to include token
 axios.interceptors.request.use(
