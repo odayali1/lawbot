@@ -2,8 +2,16 @@ const express = require('express')
 const User = require('../models/User')
 const { body, validationResult, param } = require('express-validator')
 const jwt = require('jsonwebtoken')
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const rateLimit = require('express-rate-limit')
+
+// Initialize Stripe only when needed to avoid serverless startup failures
+let stripe = null
+const getStripe = () => {
+  if (!stripe && process.env.STRIPE_SECRET_KEY) {
+    stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
+  }
+  return stripe
+}
 
 const router = express.Router()
 
@@ -223,6 +231,11 @@ router.post('/create-payment-intent', authenticateToken, validateSubscriptionUpd
       })
     }
 
+    const stripeClient = getStripe()
+    if (!stripeClient) {
+      return res.status(503).json({ success: false, message: 'Payment service unavailable' })
+    }
+
     const { plan } = req.body
     const selectedPlan = SUBSCRIPTION_PLANS[plan]
 
@@ -234,7 +247,7 @@ router.post('/create-payment-intent', authenticateToken, validateSubscriptionUpd
     }
 
     // Create payment intent
-    const paymentIntent = await stripe.paymentIntents.create({
+    const paymentIntent = await stripeClient.paymentIntents.create({
       amount: selectedPlan.price * 100, // Convert to cents
       currency: selectedPlan.currency.toLowerCase(),
       metadata: {
@@ -242,28 +255,13 @@ router.post('/create-payment-intent', authenticateToken, validateSubscriptionUpd
         plan: plan,
         type: 'subscription'
       },
-      automatic_payment_methods: {
-        enabled: true
-      }
+      automatic_payment_methods: { enabled: true }
     })
 
-    res.json({
-      success: true,
-      clientSecret: paymentIntent.client_secret,
-      amount: selectedPlan.price,
-      currency: selectedPlan.currency,
-      plan: {
-        id: plan,
-        ...selectedPlan
-      }
-    })
-
+    res.json({ success: true, clientSecret: paymentIntent.client_secret })
   } catch (error) {
     console.error('Create payment intent error:', error)
-    res.status(500).json({
-      success: false,
-      message: 'Error creating payment intent'
-    })
+    res.status(500).json({ success: false, message: 'Payment processing error' })
   }
 })
 
@@ -272,23 +270,16 @@ router.post('/create-payment-intent', authenticateToken, validateSubscriptionUpd
 // @access  Private
 router.post('/confirm-payment', authenticateToken, async (req, res) => {
   try {
-    const { paymentIntentId } = req.body
+    const { paymentIntentId, plan } = req.body
 
-    if (!paymentIntentId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Payment intent ID is required'
-      })
+    const stripeClient = getStripe()
+    if (!stripeClient) {
+      return res.status(503).json({ success: false, message: 'Payment service unavailable' })
     }
 
-    // Retrieve payment intent from Stripe
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId)
-
+    const paymentIntent = await stripeClient.paymentIntents.retrieve(paymentIntentId)
     if (paymentIntent.status !== 'succeeded') {
-      return res.status(400).json({
-        success: false,
-        message: 'Payment not completed'
-      })
+      return res.status(400).json({ success: false, message: 'Payment not completed' })
     }
 
     // Verify the payment belongs to this user
@@ -358,13 +349,11 @@ router.post('/confirm-payment', authenticateToken, async (req, res) => {
 // @access  Private
 router.post('/upgrade', authenticateToken, validateSubscriptionUpdate, async (req, res) => {
   try {
-    const errors = validationResult(req)
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array()
-      })
+    const { plan } = req.body
+
+    const stripeClient = getStripe()
+    if (!stripeClient && plan !== 'free') {
+      return res.status(503).json({ success: false, message: 'Payment service unavailable' })
     }
 
     const { plan } = req.body
@@ -446,13 +435,11 @@ router.post('/upgrade', authenticateToken, validateSubscriptionUpdate, async (re
 // @access  Private
 router.post('/downgrade', authenticateToken, validateSubscriptionUpdate, async (req, res) => {
   try {
-    const errors = validationResult(req)
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array()
-      })
+    const { plan } = req.body
+
+    const stripeClient = getStripe()
+    if (!stripeClient && plan !== 'free') {
+      return res.status(503).json({ success: false, message: 'Payment service unavailable' })
     }
 
     const { plan } = req.body
@@ -495,6 +482,11 @@ router.post('/downgrade', authenticateToken, validateSubscriptionUpdate, async (
 // @access  Private
 router.post('/cancel', authenticateToken, async (req, res) => {
   try {
+    const stripeClient = getStripe()
+    if (!stripeClient) {
+      return res.status(503).json({ success: false, message: 'Payment service unavailable' })
+    }
+
     const user = await User.findById(req.user._id)
     
     if (user.subscription.plan === 'free') {
@@ -546,6 +538,11 @@ router.post('/cancel', authenticateToken, async (req, res) => {
 // @access  Private
 router.post('/reactivate', authenticateToken, async (req, res) => {
   try {
+    const stripeClient = getStripe()
+    if (!stripeClient) {
+      return res.status(503).json({ success: false, message: 'Payment service unavailable' })
+    }
+
     const user = await User.findById(req.user._id)
     
     if (!user.subscription.cancelAtPeriodEnd) {
@@ -597,6 +594,11 @@ router.post('/reactivate', authenticateToken, async (req, res) => {
 // @access  Private
 router.get('/payment-history', authenticateToken, async (req, res) => {
   try {
+    const stripeClient = getStripe()
+    if (!stripeClient) {
+      return res.status(503).json({ success: false, message: 'Payment service unavailable' })
+    }
+
     const { page = 1, limit = 10 } = req.query
     
     const user = await User.findById(req.user._id).select('subscription.paymentHistory')
@@ -643,6 +645,11 @@ router.get('/payment-history', authenticateToken, async (req, res) => {
 // @access  Public (but verified)
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
+    const stripeClient = getStripe()
+    if (!stripeClient) {
+      return res.status(503).json({ success: false })
+    }
+
     const sig = req.headers['stripe-signature']
     const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET
 
@@ -685,11 +692,8 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     res.json({ received: true })
 
   } catch (error) {
-    console.error('Webhook error:', error)
-    res.status(500).json({
-      success: false,
-      message: 'Webhook processing error'
-    })
+    console.error('Stripe webhook error:', error)
+    res.status(400).json({ success: false })
   }
 })
 
