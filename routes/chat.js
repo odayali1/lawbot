@@ -9,10 +9,16 @@ const jwt = require('jsonwebtoken')
 
 const router = express.Router()
 
-// Initialize OpenAI
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-})
+// Lazy OpenAI initialization to avoid serverless startup failures
+let openai = null
+const getOpenAI = () => {
+  if (!openai && process.env.OPENAI_API_KEY) {
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    })
+  }
+  return openai
+}
 
 // Rate limiting for chat routes
 const chatLimiter = rateLimit({

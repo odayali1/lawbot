@@ -9,9 +9,16 @@ const jwt = require('jsonwebtoken')
 
 const router = express.Router()
 
-// Initialize Google Gemini AI
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' })
+// Lazy Google AI initialization to avoid serverless startup failures
+let genAI = null
+let model = null
+const getGemini = () => {
+  if (!genAI && process.env.GEMINI_API_KEY) {
+    genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+    model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' })
+  }
+  return { genAI, model }
+}
 
 // Rate limiting for chat routes
 const chatLimiter = rateLimit({
