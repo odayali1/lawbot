@@ -83,9 +83,14 @@ const userSchema = new mongoose.Schema({
   },
   
   specialization: {
-    type: String,
+    type: [String],
     trim: true,
-    maxlength: [200, 'Specialization cannot exceed 200 characters']
+    validate: {
+      validator: function(v) {
+        return v.every(spec => spec.length <= 200);
+      },
+      message: 'Each specialization cannot exceed 200 characters'
+    }
   },
   
   // Subscription Information
