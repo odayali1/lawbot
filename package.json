@@ -11,7 +11,7 @@
     "lint": "eslint . --ext .js",
     "lint:fix": "eslint . --ext .js --fix",
     "build": "npm run build:client",
-    "build:client": "cd client && npm run build",
+    "build:client": "cd client && npm install && npm run build",
     "install:client": "cd client && npm install",
     "install:all": "npm install && cd client && npm install",
     "heroku-postbuild": "npm run install:client && npm run build:client",

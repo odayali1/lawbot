@@ -1,28 +1,123 @@
-node_modules
-.git
-*.log
-.DS_Store
-Thumbs.db
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Production builds
+client/build/
+dist/
+build/
+
+# Environment files
+.env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
-*.test.js
-coverage
-client/node_modules
-docs
-screenshots
-tests
-*.md
-.vscode
-.idea
+
+# Logs
+logs/
+*.log
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# next.js build output
+.next
+
+# nuxt.js build output
+.nuxt
+
+# vuepress build output
+.vuepress/dist
+
+# Serverless directories
+.serverless/
+
+# FuseBox cache
+.fusebox/
+
+# DynamoDB Local files
+.dynamodb/
+
+# TernJS port file
+.tern-port
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
+
+# Git
+.git/
 .gitignore
-README.md
-LICENSE
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test files
+tests/
+__tests__/
+*.test.js
+*.spec.js
+
+# Documentation
+*.md
+docs/
+
+# Scripts
+scripts/
+deploy-*.js
+ecosystem.config.js
 Procfile
-deploy-to-aapanel.js
-DEPLOYMENT_STATUS.md
-GITHUB_SETUP_GUIDE.md
-PUBLIC_DEPLOYMENT_GUIDE.md
-VERCEL_DEPLOYMENT_GUIDE.md
-VERCEL_QUICK_START.md
+
+# Uploads and data
+uploads/
+data/
