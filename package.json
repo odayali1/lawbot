@@ -101,7 +101,7 @@
   "bugs": {
     "url": "https://github.com/your-username/jordan-lawbot/issues"
   },
-  "homepage": "https://github.com/your-username/jordan-lawbot#readme",
+  "homepage": ".",
   "jest": {
     "testEnvironment": "node",
     "setupFilesAfterEnv": [

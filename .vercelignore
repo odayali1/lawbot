@@ -4,8 +4,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Production builds
-client/build/
+# Production builds (keep these for Vercel)
+# client/build/
 dist/
 build/
 
