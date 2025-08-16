@@ -270,7 +270,7 @@ router.post('/create-payment-intent', authenticateToken, validateSubscriptionUpd
 // @access  Private
 router.post('/confirm-payment', authenticateToken, async (req, res) => {
   try {
-    const { paymentIntentId, plan } = req.body
+    const { paymentIntentId } = req.body
 
     const stripeClient = getStripe()
     if (!stripeClient) {
@@ -348,7 +348,6 @@ router.post('/confirm-payment', authenticateToken, async (req, res) => {
 // @desc    Upgrade subscription plan
 // @access  Private
 router.post('/upgrade', authenticateToken, validateSubscriptionUpdate, async (req, res) => {
-  try {
     const { plan } = req.body
 
     const stripeClient = getStripe()
@@ -356,7 +355,6 @@ router.post('/upgrade', authenticateToken, validateSubscriptionUpdate, async (re
       return res.status(503).json({ success: false, message: 'Payment service unavailable' })
     }
 
-    const { plan } = req.body
     const user = await User.findById(req.user._id)
     const currentPlan = user.subscription.plan
     const newPlan = SUBSCRIPTION_PLANS[plan]
@@ -417,7 +415,6 @@ router.post('/upgrade', authenticateToken, validateSubscriptionUpdate, async (re
             id: plan,
             ...newPlan
           }
-        }
       })
     }
 
@@ -442,7 +439,6 @@ router.post('/downgrade', authenticateToken, validateSubscriptionUpdate, async (
       return res.status(503).json({ success: false, message: 'Payment service unavailable' })
     }
 
-    const { plan } = req.body
     const user = await User.findById(req.user._id)
     const newPlan = SUBSCRIPTION_PLANS[plan]
 
@@ -498,7 +494,7 @@ router.post('/cancel', authenticateToken, async (req, res) => {
 
     // Cancel Stripe subscription if exists
     if (user.subscription.stripeSubscriptionId) {
-      try {
+      try {.
         await stripe.subscriptions.update(user.subscription.stripeSubscriptionId, {
           cancel_at_period_end: true
         })
